@@ -183,6 +183,8 @@ THIRDSTEP0
 ; Sending command "000010" (set to 4 bits)
 ; Sending command "000010" (set to 4 bits) (again ?)
 ; Sending command "001100" (2 lines, 11 points font)
+; Sending command "000000" (display on)
+; Sending command "001110" (cursor appears)
 FOURTHSTEP
     MOVLW b'01000011'
     MOVWF LATD
@@ -206,6 +208,18 @@ FOURTHSTEP
     MOVWF LATD
     CALL UNIT_TEMPO
     MOVLW b'00001100'
+    MOVWF LATD
+    
+    MOVLW b'01000000'
+    MOVWF LATD
+    CALL UNIT_TEMPO
+    MOVLW b'00000000'
+    MOVWF LATD
+    
+    MOVLW b'01001110'
+    MOVWF LATD
+    CALL UNIT_TEMPO
+    MOVLW b'00001110'
     MOVWF LATD
     
     GOTO $                          ; loop forever
