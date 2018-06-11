@@ -84,9 +84,12 @@ VAR0_MAX RES 1
 VAR1_MAX RES 1
 VAR2_MAX RES 1
 DATA_INS    RES 1
- 
 UNIT_WAIT RES 1
 TEMP_COUNT RES 1
+NUMBER	RES 1
+CHAR	RES 1
+RESULTHI  RES 1
+RESULTLO  RES 1
 ;*******************************************************************************
 ; Reset Vector
 ;*******************************************************************************
@@ -106,16 +109,8 @@ BEGINNING
     ; 1 tick = 0.25µs
     ; 1 instruction = 4 ticks
     ; so 1 instruction = 1µs
-    MOVLW d'38'
+    MOVLW d'11'
     MOVWF UNIT_WAIT
-    
-    ; 1377 in decimal
-    ; 3.4425e-4 seconds
-    ; 0,344 ms
-    ;MOVLW 0x02
-    ;MOVWF VAR0_MAX
-    ;MOVLW 0xFF
-    ;MOVWF VAR1_MAX
 
     ; Init ports routine  
     ;MOVLB 0xF	    ; Selecting memory bank
@@ -135,7 +130,7 @@ INITSCREEN
 ; First waiting step (screen powering on)
 FIRSTSTEP
     ; We need 400 UNIT_WAIT (> 15ms)
-    MOVLW 0x02
+    MOVLW 0x01
     MOVWF VAR1
     
 FIRSTSTEP0
@@ -154,13 +149,9 @@ FIRSTSTEP1
 ; Waiting > 4.1ms (110 UNIT_WAIT)
 SECONDSTEP
     MOVLW b'01000011'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    MOVLW b'00000011'
-    MOVWF LATD
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD
     
-    MOVLW d'180'
+    MOVLW d'110'
     MOVWF VAR0
 SECONDSTEP0
     CALL UNIT_TEMPO
@@ -173,11 +164,7 @@ SECONDSTEP0
 THIRDSTEP
     MOVLW b'01000011'
     MOVWF LATD
-    CALL UNIT_TEMPO
-    ;MOVLW b'00000011'
-    ;MOVWF LATD
-    BCF LATD,6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD
     
     MOVLW d'10'
     MOVWF VAR0
@@ -197,143 +184,93 @@ THIRDSTEP0
 FOURTHSTEP
     ; 4 bits instruction for 4 bit mode
     MOVLW b'01000011'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
-    
-    
+    CALL VALIDATECMD 
     
     MOVLW b'01000010'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
-    
-    
+    CALL VALIDATECMD 
     
     MOVLW b'01000010'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD 
     
     MOVLW b'01001000'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD 
     
+    ; 8 BITS COMMANDS FOLLOWING
     
     ;DISPLAY OFF
     MOVLW b'01000000'
-    MOVWF LATD
-    CALL UNIT_TEMPO    
-    BCF LATD, 6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD 
     
     MOVLW b'01001000'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD 
     
-    
-    ; DISPLAY ON
+    ; DISPLAY/CURSOR/BLINKING ON/OFF
     MOVLW b'01000000'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD 
     
+    ; 0 -> Blinking
+    ; 1 -> Cursor
+    ; 2 -> Display
     MOVLW b'01001111' ; Différent du prof sinon rien n'apparait.
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD 
     
     ; JUSQU'ICI TOUT FONCTIONNE NICKEL
 
-    ; DISPLAY CLEAR
-    MOVLW b'01000000'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
-    
-    MOVLW b'01000001'
-    MOVWF LATD
-    CALL UNIT_TEMPO
-    BCF LATD, 6
-    CALL UNIT_TEMPO
-    
-    ; WAIT > 1.52 ms
-    MOVLW d'250'
-    MOVWF VAR0
-CLEARDISPLAYWAIT
-    CALL UNIT_TEMPO
-    DECFSZ VAR0
-    BRA CLEARDISPLAYWAIT
-    
-
+    CALL CLEARDISPLAY
     
     ; ENTRY SET MODE
     ; I/D = 1 => Increment
     ; S => The display does not shift
     MOVLW b'01000000'
-    MOVWF LATD
-    NOP
-    BCF LATD, 6
-    CALL UNIT_TEMPO
+    CALL VALIDATECMD
     
     MOVLW b'01000110'
-    MOVWF LATD
-    NOP
-    BCF LATD, 6
-    CALL UNIT_TEMPO       
+    CALL VALIDATECMD    
     
-    ;WRITE W
-    MOVLW b'01100101'
-    MOVWF LATD
-    NOP
-    BCF LATD, 6
+    CALL WRITEW
+    CALL WRITEE
+    CALL WRITEL
+    CALL WRITEC
+    CALL WRITEO
+    CALL WRITEM
+    CALL WRITEE
+    
+    CALL WRITECRLF
+    
+    CALL WRITE0
+    CALL WRITE1
+    CALL WRITE2
+    CALL WRITE3
+    CALL WRITE4
+    CALL WRITE5
+    CALL WRITE6
+    CALL WRITE7
+    CALL WRITE8
+    CALL WRITE9
+   
+    ; TRYING TO SHOW THE WEIGHT WITH A CHAR FROM THE TABLE
+    ; NOT WORKING. SINCE I'VE ADDED THIS, MOVWF ISN'T WORKING
+SHOWACQ
+    CALL CLEARDISPLAY
+    CALL WRITEE
+    CALL ACQUISITION
+    MOVF ADRESL, 0
+    CALL WRITECHAR
+    
+    ; LONG WAITING
+    MOVLW 0x20
+    MOVWF VAR1
+SHOWACQWAIT0
+    MOVLW 0xFF
+    MOVWF VAR0
+SHOWACQWAIT1
     CALL UNIT_TEMPO
+    DECFSZ VAR0
+    BRA SHOWACQWAIT1
+    DECFSZ VAR1
+    BRA SHOWACQWAIT0
     
-    MOVLW b'01100111'	
-    MOVWF LATD
-    NOP
-    BCF LATD, 6
-    CALL UNIT_TEMPO
-    
-    ;WRITE E
-    MOVLW b'01100100'
-    MOVWF LATD
-    NOP
-    BCF LATD, 6
-    CALL UNIT_TEMPO
-    
-    MOVLW b'01100101'	
-    MOVWF LATD
-    NOP
-    BCF LATD, 6
-    CALL UNIT_TEMPO
-    
-    ;WRITE L
-    ;MOVLW b'01100100'
-    ;MOVWF LATD
-    ;CALL UNIT_TEMPO
-    ;BCF LATD, 6
-    ;CALL UNIT_TEMPO
-    
-    ;MOVLW b'01101100'	
-    ;MOVWF LATD
-    ;CALL UNIT_TEMPO
-    ;BCF LATD, 6
-    ;CALL UNIT_TEMPO
-    
-    ;BSF LATD, 6
-    
-      
+    BRA SHOWACQ
                
     GOTO $                          ; loop forever
     
@@ -355,5 +292,327 @@ LOOPTEMP
     
 SEND_INSTRUCTION
     MOVWF DATA_INS
+    
+
+;------------------------------------------------
+; Validate a command to the LCD
+; Set the desired command in W before calling
+;------------------------------------------------
+    
+VALIDATECMD
+    MOVWF LATD
+    CALL UNIT_TEMPO
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    RETURN
+    
+;------------------------------------------------
+; Clear the display
+;------------------------------------------------
+    
+CLEARDISPLAY
+    ; DISPLAY CLEAR
+    MOVLW b'01000000'
+    CALL VALIDATECMD
+    
+    MOVLW b'01000001'
+    CALL VALIDATECMD
+    
+    ; WAIT > 1.52 ms
+    MOVLW d'250'
+    MOVWF VAR0
+CLEARDISPLAYWAIT
+    CALL UNIT_TEMPO
+    DECFSZ VAR0
+    BRA CLEARDISPLAYWAIT
+    
+    RETURN
+    
+;------------------------------------------------
+; Write CRLF
+;------------------------------------------------
+    
+WRITECRLF
+    ;CRLF
+    MOVLW b'01001100'
+    CALL VALIDATECMD
+    
+    MOVLW b'01000000'
+    CALL VALIDATECMD
+    
+    RETURN
+
+;------------------------------------------------
+; Write W
+;------------------------------------------------
+
+WRITEW
+    MOVLW b'01010101'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010111'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write E
+;------------------------------------------------
+
+WRITEE
+    MOVLW b'01010100'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010101'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write L
+;------------------------------------------------
+
+WRITEL
+    MOVLW b'01010100'
+    CALL VALIDATECMD
+    
+    MOVLW b'01011100'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write C
+;------------------------------------------------
+
+WRITEC
+    MOVLW b'01010100'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010011'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write O
+;------------------------------------------------
+
+WRITEO
+    MOVLW b'01010100'
+    CALL VALIDATECMD
+    
+    MOVLW b'01011111'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write M
+;------------------------------------------------
+
+WRITEM 
+    MOVLW b'01010100'
+    CALL VALIDATECMD
+    
+    MOVLW b'01011101'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 0
+;------------------------------------------------
+
+WRITE0
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010000'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 1
+;------------------------------------------------
+
+WRITE1
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010001'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 2
+;------------------------------------------------
+
+WRITE2
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010010'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 3
+;------------------------------------------------
+
+WRITE3
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010011'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 4
+;------------------------------------------------
+
+WRITE4
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010100'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 5
+;------------------------------------------------
+
+WRITE5
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010101'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 6
+;------------------------------------------------
+
+WRITE6
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010110'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 7
+;------------------------------------------------
+
+WRITE7
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010111'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 8
+;------------------------------------------------
+
+WRITE8
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01011000'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
+; Write 9
+;------------------------------------------------
+
+WRITE9
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01011001'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+    
+;------------------------------------------------
+; Write number
+; Set W to desired number before calling this function
+; This is going to change the content in W
+;------------------------------------------------
+
+WRITENUMBER
+    MOVWF NUMBER
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010000'
+    IORWF NUMBER, 0
+    CALL VALIDATECMD
+    
+    RETURN
+    
+WRITECHAR
+    MOVWF NUMBER
+    MOVWF CHAR
+    RRCF CHAR, 1
+    RRCF CHAR, 1
+    RRCF CHAR, 1
+    RRCF CHAR, 1
+    MOVLW b'00001111'
+    ANDWF CHAR, 1
+    MOVLW b'01010000'
+    IORWF CHAR, 0
+    CALL VALIDATECMD
+    
+    MOVLW b'11110000'
+    ANDWF NUMBER, 1
+    MOVLW b'01010000'
+    IORWF NUMBER, 0
+    CALL VALIDATECMD
+    
+    RETURN
+    
+    
+ACQUISITION
+    CLRF PORTA
+    MOVLW b'10101110'
+    MOVWF ADCON2
+    MOVLW b'00000000'
+    MOVWF ADCON1
+    
+    BSF TRISA, 0      ; Set RA0 to input
+    BSF ANSELA, 0     ; Set RA0 to analog
+    
+    MOVLW b'00000001' ; Only RA0 will be activated
+    MOVWF ADCON0
+    
+LAUNCH
+    BSF ADCON0,GO
+    
+POLL
+    BTFSC ADCON0,GO
+    BRA POLL
+    
+    MOVFF ADRESH, RESULTHI
+    MOVFF ADRESL, RESULTLO
+    
+    RETURN
     
     END
