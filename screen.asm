@@ -83,6 +83,7 @@ VAR2	RES 1
 VAR0_MAX RES 1
 VAR1_MAX RES 1
 VAR2_MAX RES 1
+DATA_INS    RES 1
  
 UNIT_WAIT RES 1
 TEMP_COUNT RES 1
@@ -117,7 +118,7 @@ BEGINNING
     ;MOVWF VAR1_MAX
 
     ; Init ports routine  
-    MOVLB 0xF	    ; Selecting memory bank
+    ;MOVLB 0xF	    ; Selecting memory bank
     CLRF PORTD	    ; Clear PORTD => output and latches to zero
     CLRF LATD	    ; Clear Latch
     CLRF TRISD	    ; Set port D to output
@@ -134,17 +135,19 @@ INITSCREEN
 ; First waiting step (screen powering on)
 FIRSTSTEP
     ; We need 400 UNIT_WAIT (> 15ms)
-    MOVLW 0x01
+    MOVLW 0x02
     MOVWF VAR1
+    
 FIRSTSTEP0
     MOVLW 0x90
     MOVWF VAR0
 FIRSTSTEP1
     CALL UNIT_TEMPO
-    DECFSZ VAR1
-    BRA FIRSTSTEP1
     DECFSZ VAR0
+    BRA FIRSTSTEP1
+    DECFSZ VAR1
     BRA FIRSTSTEP0
+
     
 ; Second step:
 ; Sending command 000011
@@ -155,7 +158,9 @@ SECONDSTEP
     CALL UNIT_TEMPO
     MOVLW b'00000011'
     MOVWF LATD
-    MOVLW d'110'
+    CALL UNIT_TEMPO
+    
+    MOVLW d'180'
     MOVWF VAR0
 SECONDSTEP0
     CALL UNIT_TEMPO
@@ -169,9 +174,12 @@ THIRDSTEP
     MOVLW b'01000011'
     MOVWF LATD
     CALL UNIT_TEMPO
-    MOVLW b'00000011'
-    MOVWF LATD
-    MOVLW d'110'
+    ;MOVLW b'00000011'
+    ;MOVWF LATD
+    BCF LATD,6
+    CALL UNIT_TEMPO
+    
+    MOVLW d'10'
     MOVWF VAR0
 THIRDSTEP0
     CALL UNIT_TEMPO
@@ -180,48 +188,153 @@ THIRDSTEP0
     
 ; Fourth step:
 ; Sending command "000011"
+;
 ; Sending command "000010" (set to 4 bits)
 ; Sending command "000010" (set to 4 bits) (again ?)
-; Sending command "001100" (2 lines, 11 points font)
+; Sending command "001100" (2 lines, 8 points font, comme M.Lambert)
 ; Sending command "000000" (display on)
 ; Sending command "001110" (cursor appears)
 FOURTHSTEP
+    ; 4 bits instruction for 4 bit mode
     MOVLW b'01000011'
     MOVWF LATD
     CALL UNIT_TEMPO
-    MOVLW b'00000011'
-    MOVWF LATD
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    
     
     MOVLW b'01000010'
     MOVWF LATD
     CALL UNIT_TEMPO
-    MOVLW b'00000010'
-    MOVWF LATD
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    
     
     MOVLW b'01000010'
     MOVWF LATD
     CALL UNIT_TEMPO
-    MOVLW b'00000010'
-    MOVWF LATD
+    BCF LATD, 6
+    CALL UNIT_TEMPO
     
-    MOVLW b'01001100'
+    MOVLW b'01001000'
     MOVWF LATD
     CALL UNIT_TEMPO
-    MOVLW b'00001100'
-    MOVWF LATD
+    BCF LATD, 6
+    CALL UNIT_TEMPO
     
+    
+    ;DISPLAY OFF
+    MOVLW b'01000000'
+    MOVWF LATD
+    CALL UNIT_TEMPO    
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    MOVLW b'01001000'
+    MOVWF LATD
+    CALL UNIT_TEMPO
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    
+    ; DISPLAY ON
     MOVLW b'01000000'
     MOVWF LATD
     CALL UNIT_TEMPO
-    MOVLW b'00000000'
-    MOVWF LATD
+    BCF LATD, 6
+    CALL UNIT_TEMPO
     
-    MOVLW b'01001110'
+    MOVLW b'01001111' ; Différent du prof sinon rien n'apparait.
     MOVWF LATD
     CALL UNIT_TEMPO
-    MOVLW b'00001110'
-    MOVWF LATD
+    BCF LATD, 6
+    CALL UNIT_TEMPO
     
+    ; JUSQU'ICI TOUT FONCTIONNE NICKEL
+
+    ; DISPLAY CLEAR
+    MOVLW b'01000000'
+    MOVWF LATD
+    CALL UNIT_TEMPO
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    MOVLW b'01000001'
+    MOVWF LATD
+    CALL UNIT_TEMPO
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    ; WAIT > 1.52 ms
+    MOVLW d'250'
+    MOVWF VAR0
+CLEARDISPLAYWAIT
+    CALL UNIT_TEMPO
+    DECFSZ VAR0
+    BRA CLEARDISPLAYWAIT
+    
+
+    
+    ; ENTRY SET MODE
+    ; I/D = 1 => Increment
+    ; S => The display does not shift
+    MOVLW b'01000000'
+    MOVWF LATD
+    NOP
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    MOVLW b'01000110'
+    MOVWF LATD
+    NOP
+    BCF LATD, 6
+    CALL UNIT_TEMPO       
+    
+    ;WRITE W
+    MOVLW b'01100101'
+    MOVWF LATD
+    NOP
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    MOVLW b'01100111'	
+    MOVWF LATD
+    NOP
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    ;WRITE E
+    MOVLW b'01100100'
+    MOVWF LATD
+    NOP
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    MOVLW b'01100101'	
+    MOVWF LATD
+    NOP
+    BCF LATD, 6
+    CALL UNIT_TEMPO
+    
+    ;WRITE L
+    ;MOVLW b'01100100'
+    ;MOVWF LATD
+    ;CALL UNIT_TEMPO
+    ;BCF LATD, 6
+    ;CALL UNIT_TEMPO
+    
+    ;MOVLW b'01101100'	
+    ;MOVWF LATD
+    ;CALL UNIT_TEMPO
+    ;BCF LATD, 6
+    ;CALL UNIT_TEMPO
+    
+    ;BSF LATD, 6
+    
+      
+               
     GOTO $                          ; loop forever
     
 
@@ -231,7 +344,7 @@ FOURTHSTEP
     
 UNIT_TEMPO
     ; Load UNIT_WAIT into a temp variable
-    MOVF UNIT_WAIT
+    MOVF UNIT_WAIT, 0
     MOVWF TEMP_COUNT
     
 LOOPTEMP
@@ -239,4 +352,8 @@ LOOPTEMP
     BRA LOOPTEMP
     RETURN
 
+    
+SEND_INSTRUCTION
+    MOVWF DATA_INS
+    
     END
