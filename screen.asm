@@ -31,7 +31,7 @@
 
 ; CONFIG3H
   CONFIG  CCP2MX = PORTC1       ; CCP2 MUX bit (CCP2 input/output is multiplexed with RC1)
-  CONFIG  PBADEN = ON           ; PORTB A/D Enable bit (PORTB<5:0> pins are configured as analog input channels on Reset)
+  CONFIG  PBADEN = OFF           ; PORTB A/D Enable bit (PORTB<5:0> pins are configured as analog input channels on Reset)
   CONFIG  CCP3MX = PORTB5       ; P3A/CCP3 Mux bit (P3A/CCP3 input/output is multiplexed with RB5)
   CONFIG  HFOFST = ON           ; HFINTOSC Fast Start-up (HFINTOSC output and ready status are not delayed by the oscillator stable status)
   CONFIG  T3CMX = PORTC0        ; Timer3 Clock input mux bit (T3CKI is on RC0)
@@ -77,6 +77,7 @@
 
 ; Variable Definition
 	UDATA
+UNIT_WAIT RES 1
 VAR0	RES 1
 VAR1	RES 1
 VAR2	RES 1
@@ -84,7 +85,7 @@ VAR0_MAX RES 1
 VAR1_MAX RES 1
 VAR2_MAX RES 1
 DATA_INS    RES 1
-UNIT_WAIT RES 1
+
 TEMP_COUNT RES 1
 NUMBER	RES 1
 CHAR	RES 1
@@ -98,6 +99,17 @@ RES_VECT  CODE    0x0000            ; processor reset vector
 
     GOTO    BEGINNING                   ; go to beginning of program
 
+
+; INTERRUPT ROUTINE
+ISRHV     CODE    0x0008
+    GOTO    HIGH_ISR
+
+ISRH      CODE
+HIGH_ISR
+    BCF INTCON, 1
+    MOVLW d'7'
+    CALL WRITENUMBER
+    RETFIE  FAST
 
 ;*******************************************************************************
 ; MAIN PROGRAM
@@ -119,11 +131,28 @@ BEGINNING
     CLRF TRISD	    ; Set port D to output
     CLRF ANSELD	    ; Set port D to digital
     
+    CLRF PORTB
+    CLRF LATB
+    SETF TRISB
+    CLRF ANSELB
+    
     ; Set the clock
     ; bit 6-4: clock set to 4Mhz
     ; bit 1-0: clock set to internal oscillator
     MOVLW b'01010010'
     MOVWF OSCCON
+    
+    ; Réglage de INTCON
+    ; Bit 7: Activer les interruptions globales
+    ; Bit 6: Activer les interruptions des périphériques
+    ; Bit 4: Activer l'interruption sur INT0
+    BSF INTCON, 4
+    BSF INTCON, 7
+    BSF INTCON, 6
+    ; Réglage de INTCON2
+    ; Bit 6 = 0: Interruption sur front descendant
+    BCF INTCON2, 6
+    BCF INTCON, 2
     
 INITSCREEN
     
@@ -226,7 +255,8 @@ FOURTHSTEP
     
     MOVLW b'01000110'
     CALL VALIDATECMD    
-    
+  
+WRITEDISPLAY
     CALL WRITEW
     CALL WRITEE
     CALL WRITEL
@@ -250,12 +280,13 @@ FOURTHSTEP
    
     ; TRYING TO SHOW THE WEIGHT WITH A CHAR FROM THE TABLE
     ; NOT WORKING. SINCE I'VE ADDED THIS, MOVWF ISN'T WORKING
+    ; OR AT LEAST IT'S SHOWING 0 ON THE DEBUGGING (CHECK IT OUT REMI)
 SHOWACQ
     CALL CLEARDISPLAY
     CALL WRITEE
     CALL ACQUISITION
     MOVF ADRESL, 0
-    CALL WRITECHAR
+    CALL WRITECHARPBADEN
     
     ; LONG WAITING
     MOVLW 0x20
@@ -270,7 +301,9 @@ SHOWACQWAIT1
     DECFSZ VAR1
     BRA SHOWACQWAIT0
     
-    BRA SHOWACQ
+    CALL CLEARDISPLAY
+    
+;    BRA SHOWACQ
                
     GOTO $                          ; loop forever
     
