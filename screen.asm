@@ -118,6 +118,153 @@ HIGH_ISR
 ;*******************************************************************************
 
 ;------------------------------------------------
+; PIC configuration routine
+;------------------------------------------------    
+INIT
+    ; 1 tick = 0.25µs
+    ; 1 instruction = 4 ticks
+    ; so 1 instruction = 1µs
+    MOVLW d'11'
+    MOVWF UNIT_WAIT
+
+    ; Init ports routine  
+    ;MOVLB 0xF	    ; Selecting memory bank
+    CLRF PORTD	    ; Clear PORTD => output and latches to zero
+    CLRF LATD	    ; Clear Latch
+    CLRF TRISD	    ; Set port D to output
+    CLRF ANSELD	    ; Set port D to digital
+    
+    CLRF PORTB
+    CLRF LATB
+    SETF TRISB
+    CLRF ANSELB
+    
+    ; Set the clock
+    ; bit 6-4: clock set to 4Mhz
+    ; bit 1-0: clock set to internal oscillator
+    MOVLW b'01010010'
+    MOVWF OSCCON
+    
+    ; Réglage de INTCON
+    ; Bit 7: Activer les interruptions globales
+    ; Bit 6: Activer les interruptions des périphériques
+    ; Bit 4: Activer l'interruption sur INT0
+    BSF INTCON, 4
+    BSF INTCON, 7
+    BSF INTCON, 6
+    ; Réglage de INTCON2
+    ; Bit 6 = 0: Interruption sur front descendant
+    BSF INTCON2, 7
+    BCF INTCON2, 6
+    BCF INTCON, 2
+    RETURN
+
+;------------------------------------------------
+; Calibration routine for LCD screen
+;------------------------------------------------    
+INITSCREEN
+    
+; First waiting step (screen powering on)
+FIRSTSTEP
+    ; We need 400 UNIT_WAIT (> 15ms)
+    MOVLW 0x01
+    MOVWF VAR1
+    
+FIRSTSTEP0
+    MOVLW 0x90
+    MOVWF VAR0
+FIRSTSTEP1
+    CALL UNIT_TEMPO
+    DECFSZ VAR0
+    BRA FIRSTSTEP1
+    DECFSZ VAR1
+    BRA FIRSTSTEP0
+
+    
+; Second step:
+; Sending command 000011
+; Waiting > 4.1ms (110 UNIT_WAIT)
+SECONDSTEP
+    MOVLW b'01000011'
+    CALL VALIDATECMD
+    
+    MOVLW d'110'
+    MOVWF VAR0
+SECONDSTEP0
+    CALL UNIT_TEMPO
+    DECFSZ VAR0
+    BRA SECONDSTEP0
+
+; Third step:
+; Sending command "000011"
+; Waiting > 100µs (3 UNIT_WAIT)
+THIRDSTEP
+    MOVLW b'01000011'
+    MOVWF LATD
+    CALL VALIDATECMD
+    
+    MOVLW d'10'
+    MOVWF VAR0
+THIRDSTEP0
+    CALL UNIT_TEMPO
+    DECFSZ VAR0
+    BRA THIRDSTEP0
+    
+; Fourth step:
+; Sending command "000011"
+;
+; Sending command "000010" (set to 4 bits)
+; Sending command "000010" (set to 4 bits) (again ?)
+; Sending command "001100" (2 lines, 8 points font, comme M.Lambert)
+; Sending command "000000" (display on)
+; Sending command "001110" (cursor appears)
+FOURTHSTEP
+    ; 4 bits instruction for 4 bit mode
+    MOVLW b'01000011'
+    CALL VALIDATECMD 
+    
+    MOVLW b'01000010'
+    CALL VALIDATECMD 
+    
+    MOVLW b'01000010'
+    CALL VALIDATECMD 
+    
+    MOVLW b'01001000'
+    CALL VALIDATECMD 
+    
+    ; 8 BITS COMMANDS FOLLOWING
+    
+    ;DISPLAY OFF
+    MOVLW b'01000000'
+    CALL VALIDATECMD 
+    
+    MOVLW b'01001000'
+    CALL VALIDATECMD 
+    
+    ; DISPLAY/CURSOR/BLINKING ON/OFF
+    MOVLW b'01000000'
+    CALL VALIDATECMD 
+    
+    ; 0 -> Blinking
+    ; 1 -> Cursor
+    ; 2 -> Display
+    MOVLW b'01001111' ; Différent du prof sinon rien n'apparait.
+    CALL VALIDATECMD 
+    
+    ; JUSQU'ICI TOUT FONCTIONNE NICKEL
+
+    CALL CLEARDISPLAY
+    
+    ; ENTRY SET MODE
+    ; I/D = 1 => Increment
+    ; S => The display does not shift
+    MOVLW b'01000000'
+    CALL VALIDATECMD
+    
+    MOVLW b'01000110'
+    CALL VALIDATECMD
+    
+;------------------------------------------------
 ; Wait for 38µs
 ;------------------------------------------------
     
@@ -495,144 +642,10 @@ POLL
 MAIN_PROG CODE                      ; let linker place main program
 
 BEGINNING
-    ; 1 tick = 0.25µs
-    ; 1 instruction = 4 ticks
-    ; so 1 instruction = 1µs
-    MOVLW d'11'
-    MOVWF UNIT_WAIT
-
-    ; Init ports routine  
-    ;MOVLB 0xF	    ; Selecting memory bank
-    CLRF PORTD	    ; Clear PORTD => output and latches to zero
-    CLRF LATD	    ; Clear Latch
-    CLRF TRISD	    ; Set port D to output
-    CLRF ANSELD	    ; Set port D to digital
+    CALL INIT
+    CALL INITSCREEN
     
-    CLRF PORTB
-    CLRF LATB
-    SETF TRISB
-    CLRF ANSELB
     
-    ; Set the clock
-    ; bit 6-4: clock set to 4Mhz
-    ; bit 1-0: clock set to internal oscillator
-    MOVLW b'01010010'
-    MOVWF OSCCON
-    
-    ; Réglage de INTCON
-    ; Bit 7: Activer les interruptions globales
-    ; Bit 6: Activer les interruptions des périphériques
-    ; Bit 4: Activer l'interruption sur INT0
-    BSF INTCON, 4
-    BSF INTCON, 7
-    BSF INTCON, 6
-    ; Réglage de INTCON2
-    ; Bit 6 = 0: Interruption sur front descendant
-    BSF INTCON2, 7
-    BCF INTCON2, 6
-    BCF INTCON, 2
-    
-INITSCREEN
-    
-; First waiting step (screen powering on)
-FIRSTSTEP
-    ; We need 400 UNIT_WAIT (> 15ms)
-    MOVLW 0x01
-    MOVWF VAR1
-    
-FIRSTSTEP0
-    MOVLW 0x90
-    MOVWF VAR0
-FIRSTSTEP1
-    CALL UNIT_TEMPO
-    DECFSZ VAR0
-    BRA FIRSTSTEP1
-    DECFSZ VAR1
-    BRA FIRSTSTEP0
-
-    
-; Second step:
-; Sending command 000011
-; Waiting > 4.1ms (110 UNIT_WAIT)
-SECONDSTEP
-    MOVLW b'01000011'
-    CALL VALIDATECMD
-    
-    MOVLW d'110'
-    MOVWF VAR0
-SECONDSTEP0
-    CALL UNIT_TEMPO
-    DECFSZ VAR0
-    BRA SECONDSTEP0
-
-; Third step:
-; Sending command "000011"
-; Waiting > 100µs (3 UNIT_WAIT)
-THIRDSTEP
-    MOVLW b'01000011'
-    MOVWF LATD
-    CALL VALIDATECMD
-    
-    MOVLW d'10'
-    MOVWF VAR0
-THIRDSTEP0
-    CALL UNIT_TEMPO
-    DECFSZ VAR0
-    BRA THIRDSTEP0
-    
-; Fourth step:
-; Sending command "000011"
-;
-; Sending command "000010" (set to 4 bits)
-; Sending command "000010" (set to 4 bits) (again ?)
-; Sending command "001100" (2 lines, 8 points font, comme M.Lambert)
-; Sending command "000000" (display on)
-; Sending command "001110" (cursor appears)
-FOURTHSTEP
-    ; 4 bits instruction for 4 bit mode
-    MOVLW b'01000011'
-    CALL VALIDATECMD 
-    
-    MOVLW b'01000010'
-    CALL VALIDATECMD 
-    
-    MOVLW b'01000010'
-    CALL VALIDATECMD 
-    
-    MOVLW b'01001000'
-    CALL VALIDATECMD 
-    
-    ; 8 BITS COMMANDS FOLLOWING
-    
-    ;DISPLAY OFF
-    MOVLW b'01000000'
-    CALL VALIDATECMD 
-    
-    MOVLW b'01001000'
-    CALL VALIDATECMD 
-    
-    ; DISPLAY/CURSOR/BLINKING ON/OFF
-    MOVLW b'01000000'
-    CALL VALIDATECMD 
-    
-    ; 0 -> Blinking
-    ; 1 -> Cursor
-    ; 2 -> Display
-    MOVLW b'01001111' ; Différent du prof sinon rien n'apparait.
-    CALL VALIDATECMD 
-    
-    ; JUSQU'ICI TOUT FONCTIONNE NICKEL
-
-    CALL CLEARDISPLAY
-    
-    ; ENTRY SET MODE
-    ; I/D = 1 => Increment
-    ; S => The display does not shift
-    MOVLW b'01000000'
-    CALL VALIDATECMD
-    
-    MOVLW b'01000110'
-    CALL VALIDATECMD    
   
 WRITEDISPLAY
     CALL WRITEW
@@ -657,8 +670,8 @@ WRITEDISPLAY
     CALL WRITE9
    
 SHOWACQ
-    ;CALL CLEARDISPLAY
-    ;CALL WRITEE
+    CALL CLEARDISPLAY
+    CALL WRITEE
     CALL ACQUISITION
     CALL TOLINE3
     MOVF ADRESL, 0
