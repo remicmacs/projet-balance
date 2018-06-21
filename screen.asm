@@ -91,6 +91,18 @@ CHAR	RES 1
 ; Variables pour l'acquisition
 RESULTHI  RES 1
 RESULTLO  RES 1
+  
+  
+DIGIT_HI    RES 1
+DIGIT_LO    RES 1
+RESTE_HI    RES 1
+RESTE_LO    RES 1
+UNITES	    RES 1
+DIZAINES    RES 1
+CENTAINES   RES 1
+MILLIERS    RES 1
+BOOL	    RES 1
+
 
 ;*******************************************************************************
 ; Reset Vector
@@ -292,7 +304,134 @@ POLL
     MOVFF ADRESH, RESULTHI
     MOVFF ADRESL, RESULTLO
     
-    RETURN   
+    RETURN
+
+
+UNITES_RETENUE
+    INCF DIZAINES
+    MOVLW d'10'
+    CPFSLT DIZAINES
+    CALL DIZAINES_RETENUE
+    
+    SUBWF UNITES
+    RETURN
+    
+DIZAINES_RETENUE
+    INCF CENTAINES
+    MOVLW d'10'
+    CPFSLT CENTAINES
+    CALL CENTAINES_RETENUE
+    
+    SUBWF DIZAINES
+    RETURN
+    
+CENTAINES_RETENUE
+    INCF MILLIERS
+    MOVLW d'10'
+    SUBWF CENTAINES
+    RETURN
+    
+ADD_256
+    MOVLW d'2'
+    ADDWF CENTAINES
+    MOVLW d'9'
+    CPFSLT CENTAINES
+    CALL CENTAINES_RETENUE
+    
+    MOVLW d'5'
+    ADDWF DIZAINES
+    MOVLW d'9'
+    CPFSLT DIZAINES
+    CALL DIZAINES_RETENUE
+    
+    MOVLW d'6'
+    ADDWF UNITES
+    MOVLW d'9'
+    CPFSLT UNITES
+    CALL UNITES_RETENUE
+    RETURN
+    
+
+ADD_512
+    CALL ADD_256
+    CALL ADD_256
+    RETURN
+
+;------------------------------------------------
+; Divide a number to display in radix 10
+;------------------------------------------------    
+DIVISION_10
+    MOVLW 0x00
+    MOVWF UNITES
+    MOVWF DIZAINES
+    MOVWF CENTAINES
+    MOVWF MILLIERS
+    MOVWF RESTE_HI
+    MOVWF RESTE_LO
+    
+    MOVF RESULTHI, 0
+    MOVWF RESTE_HI          ; On stocke le nombre envoyé
+    
+    MOVF RESULTLO, 0
+    MOVWF RESTE_LO
+    
+
+
+    MOVF RESTE_HI, 0
+    ANDLW b'00000010'
+    MOVWF BOOL
+    TSTFSZ BOOL
+    CALL ADD_512
+    
+EXAMINE_LSB
+    MOVF RESTE_HI,0
+    ANDLW b'00000001'
+    MOVWF BOOL
+    TSTFSZ BOOL
+    CALL ADD_256
+    
+    
+    
+DIV_CENTAINES
+    MOVLW d'10'
+    CPFSLT CENTAINES
+    CALL CENTAINES_RETENUE
+    INCF CENTAINES
+    
+    MOVLW d'100'
+    SUBWF RESTE_LO, 1           ; On retire 100 au reste
+    BN SUITE_CENTAINES       ; Si c'est négatif on saute
+    BRA DIV_CENTAINES
+    
+
+SUITE_CENTAINES
+    BC DIV_CENTAINES
+    DECF CENTAINES
+    ADDWF RESTE_LO, 1           ; On remet la centaine qui manque
+    
+    ; On passe aux dizaines    
+DIV_DIZAINES
+    MOVLW d'10'
+    CPFSLT DIZAINES
+    CALL DIZAINES_RETENUE
+    INCF DIZAINES
+
+    
+    SUBWF RESTE_LO, 1           ; On retire 10 au reste
+    BN SUITE_DIZAINES
+    BRA DIV_DIZAINES
+    
+SUITE_DIZAINES
+    DECF DIZAINES
+    ADDWF RESTE_LO, 1          ; On remet la dizaine qui manque
+    
+    MOVF RESTE_LO,0
+    ADDWF UNITES
+    MOVLW d'10'
+    CPFSLT UNITES
+    CALL UNITES_RETENUE
+    
+    RETURN
     
 ;------------------------------------------------
 ; Wait for 38µs
@@ -664,35 +803,50 @@ BEGINNING
     
     
   
-WRITEDISPLAY
-    CALL WRITEW
-    CALL WRITEE
-    CALL WRITEL
-    CALL WRITEC
-    CALL WRITEO
-    CALL WRITEM
-    CALL WRITEE
-    
-    CALL TOLINE2
-    
-    CALL WRITE0
-    CALL WRITE1
-    CALL WRITE2
-    CALL WRITE3
-    CALL WRITE4
-    CALL WRITE5
-    CALL WRITE6
-    CALL WRITE7
-    CALL WRITE8
-    CALL WRITE9
+;WRITEDISPLAY
+;    CALL WRITEW
+;    CALL WRITEE
+;    CALL WRITEL
+;    CALL WRITEC
+;    CALL WRITEO
+;    CALL WRITEM
+;    CALL WRITEE
+;    
+;    CALL TOLINE2
+;    
+;    CALL WRITE0
+;    CALL WRITE1
+;    CALL WRITE2
+;    CALL WRITE3
+;    CALL WRITE4
+;    CALL WRITE5
+;    CALL WRITE6
+;    CALL WRITE7
+;    CALL WRITE8
+;    CALL WRITE9
    
 SHOWACQ
     CALL CLEARDISPLAY
     CALL ACQUISITION
     
-    ;CALL TOLINE1   
-    MOVF RESULTLO, 0
-    CALL WRITECHAR
+    
+    ;CALL TOLINE1
+    ; MOVF RESULTLO, 0
+    ;CALL WRITECHAR
+    
+    CALL DIVISION_10
+    MOVF MILLIERS, 0
+    CALL WRITENUMBER
+    
+    MOVF CENTAINES, 0
+    CALL WRITENUMBER
+   
+    MOVF DIZAINES, 0
+    CALL WRITENUMBER
+    
+    MOVF UNITES, 0
+    CALL WRITENUMBER
+    
     CALL WRITEG
 
 ; Other temporisation routine to avoid char flicker
