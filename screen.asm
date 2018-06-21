@@ -248,11 +248,9 @@ FOURTHSTEP
     ; 0 -> Blinking
     ; 1 -> Cursor
     ; 2 -> Display
-    MOVLW b'01001111' ; Différent du prof sinon rien n'apparait.
+    MOVLW b'01001111'
     CALL VALIDATECMD 
     
-    ; JUSQU'ICI TOUT FONCTIONNE NICKEL
-
     CALL CLEARDISPLAY
     
     ; ENTRY SET MODE
@@ -263,6 +261,38 @@ FOURTHSTEP
     
     MOVLW b'01000110'
     CALL VALIDATECMD
+    
+    RETURN
+
+;------------------------------------------------
+; Polls the CAN for a new value
+;------------------------------------------------
+ACQUISITION
+    CLRF PORTA
+    
+    MOVLW b'10101110'
+    MOVWF ADCON2
+    MOVLW b'00000000'
+    MOVWF ADCON1
+    
+    BSF TRISA, 0      ; Set RA to input
+    BSF ANSELA, 0     ; Set RA to analog
+    
+    MOVLW b'00000001' ; Only RA0 will be activated
+    MOVWF ADCON0
+    
+LAUNCH
+    BSF ADCON0,GO
+    
+POLL
+    BTFSC ADCON0,GO
+    BRA POLL
+    
+    ; If a new value has been captured, move the result in global vars
+    MOVFF ADRESH, RESULTHI
+    MOVFF ADRESL, RESULTLO
+    
+    RETURN   
     
 ;------------------------------------------------
 ; Wait for 38µs
@@ -443,6 +473,19 @@ WRITEM
     RETURN
     
 ;------------------------------------------------
+; Write G
+;------------------------------------------------
+
+WRITEG 
+    MOVLW b'01010110'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010111'	
+    CALL VALIDATECMD
+    
+    RETURN
+    
+;------------------------------------------------
 ; Write 0
 ;------------------------------------------------
 
@@ -611,32 +654,6 @@ WRITECHAR
     CALL VALIDATECMD
     
     RETURN
-    
-    
-ACQUISITION
-    CLRF PORTA
-    MOVLW b'10101110'
-    MOVWF ADCON2
-    MOVLW b'00000000'
-    MOVWF ADCON1
-    
-    BSF TRISA, 0      ; Set RA0 to input
-    BSF ANSELA, 0     ; Set RA0 to analog
-    
-    MOVLW b'00000001' ; Only RA0 will be activated
-    MOVWF ADCON0
-    
-LAUNCH
-    BSF ADCON0,GO
-    
-POLL
-    BTFSC ADCON0,GO
-    BRA POLL
-    
-    MOVFF ADRESH, RESULTHI
-    MOVFF ADRESL, RESULTLO
-    
-    RETURN   
 
     
 MAIN_PROG CODE                      ; let linker place main program
@@ -671,13 +688,15 @@ WRITEDISPLAY
    
 SHOWACQ
     CALL CLEARDISPLAY
-    CALL WRITEE
     CALL ACQUISITION
-    CALL TOLINE3
-    MOVF ADRESL, 0
-    CALL WRITECHAR
     
-    ; LONG WAITING
+    ;CALL TOLINE1   
+    MOVF RESULTLO, 0
+    CALL WRITECHAR
+    CALL WRITEG
+
+; Other temporisation routine to avoid char flicker
+LONG_WAITING
     MOVLW 0x20
     MOVWF VAR1
 SHOWACQWAIT0
@@ -690,11 +709,8 @@ SHOWACQWAIT1
     DECFSZ VAR1
     BRA SHOWACQWAIT0
     
-    CALL CLEARDISPLAY
-    
-    BRA WRITEDISPLAY
-    
-;    BRA SHOWACQ
+        
+    BRA SHOWACQ
                
     GOTO $                          ; loop forever
     
