@@ -95,12 +95,12 @@ RESULTLO  RES 1
   
 DIGIT_HI    RES 1
 DIGIT_LO    RES 1
-RESTE_HI    RES 1
-RESTE_LO    RES 1
-UNITES	    RES 1
-DIZAINES    RES 1
-CENTAINES   RES 1
-MILLIERS    RES 1
+REST_HI    RES 1
+REST_LO    RES 1
+UNITS	    RES 1
+TENS    RES 1
+HUNDREDTHS   RES 1
+THOUSANDTHS    RES 1
 BOOL	    RES 1
 
 
@@ -307,48 +307,48 @@ POLL
     RETURN
 
 
-UNITES_RETENUE
-    INCF DIZAINES
+UNITS_RETENUE
+    INCF TENS
     MOVLW d'10'
-    CPFSLT DIZAINES
-    CALL DIZAINES_RETENUE
+    CPFSLT TENS
+    CALL TENS_RETENUE
     
-    SUBWF UNITES
+    SUBWF UNITS
     RETURN
     
-DIZAINES_RETENUE
-    INCF CENTAINES
+TENS_RETENUE
+    INCF HUNDREDTHS
     MOVLW d'10'
-    CPFSLT CENTAINES
-    CALL CENTAINES_RETENUE
+    CPFSLT HUNDREDTHS
+    CALL HUNDREDTHS_RETENUE
     
-    SUBWF DIZAINES
+    SUBWF TENS
     RETURN
     
-CENTAINES_RETENUE
-    INCF MILLIERS
+HUNDREDTHS_RETENUE
+    INCF THOUSANDTHS
     MOVLW d'10'
-    SUBWF CENTAINES
+    SUBWF HUNDREDTHS
     RETURN
     
 ADD_256
     MOVLW d'2'
-    ADDWF CENTAINES
+    ADDWF HUNDREDTHS
     MOVLW d'9'
-    CPFSLT CENTAINES
-    CALL CENTAINES_RETENUE
+    CPFSLT HUNDREDTHS
+    CALL HUNDREDTHS_RETENUE
     
     MOVLW d'5'
-    ADDWF DIZAINES
+    ADDWF TENS
     MOVLW d'9'
-    CPFSLT DIZAINES
-    CALL DIZAINES_RETENUE
+    CPFSLT TENS
+    CALL TENS_RETENUE
     
     MOVLW d'6'
-    ADDWF UNITES
+    ADDWF UNITS
     MOVLW d'9'
-    CPFSLT UNITES
-    CALL UNITES_RETENUE
+    CPFSLT UNITS
+    CALL UNITS_RETENUE
     RETURN
     
 
@@ -360,76 +360,78 @@ ADD_512
 ;------------------------------------------------
 ; Divide a number to display in radix 10
 ;------------------------------------------------    
-DIVISION_10
+RADIX_10
+    ; Memory clear
     MOVLW 0x00
-    MOVWF UNITES
-    MOVWF DIZAINES
-    MOVWF CENTAINES
-    MOVWF MILLIERS
-    MOVWF RESTE_HI
-    MOVWF RESTE_LO
+    MOVWF UNITS
+    MOVWF TENS
+    MOVWF HUNDREDTHS
+    MOVWF THOUSANDTHS
+    MOVWF REST_HI
+    MOVWF REST_LO
     
+    ; Storing numbers to divide
     MOVF RESULTHI, 0
-    MOVWF RESTE_HI          ; On stocke le nombre envoyé
+    MOVWF REST_HI          
     
     MOVF RESULTLO, 0
-    MOVWF RESTE_LO
+    MOVWF REST_LO
     
 
+    ; Inspecting if MSByte is zero
+    ; If MSBytes are != 0 => divide by 256 packets
 
-    MOVF RESTE_HI, 0
-    ANDLW b'00000010'
+    MOVF REST_HI, 0
+    ANDLW b'00000010'		; 2^9 bit is inspected
     MOVWF BOOL
     TSTFSZ BOOL
     CALL ADD_512
     
-EXAMINE_LSB
-    MOVF RESTE_HI,0
-    ANDLW b'00000001'
+    MOVF REST_HI,0
+    ANDLW b'00000001'		; 2^8 bit is inspected
     MOVWF BOOL
     TSTFSZ BOOL
-    CALL ADD_256
+    CALL ADD_256	    
     
-    
-    
-DIV_CENTAINES
+; Dividing by 100 packets
+DIV_HUNDREDTHS
     MOVLW d'10'
-    CPFSLT CENTAINES
-    CALL CENTAINES_RETENUE
-    INCF CENTAINES
+    CPFSLT HUNDREDTHS
+    CALL HUNDREDTHS_RETENUE
+    INCF HUNDREDTHS
     
     MOVLW d'100'
-    SUBWF RESTE_LO, 1           ; On retire 100 au reste
-    BN SUITE_CENTAINES       ; Si c'est négatif on saute
-    BRA DIV_CENTAINES
+    SUBWF REST_LO, 1		; Sub 100 to the rest
+    BN NEXTSTEP_HUNDREDTHS	; If we subbed to much, skip
+    BRA DIV_HUNDREDTHS
     
 
-SUITE_CENTAINES
-    BC DIV_CENTAINES
-    DECF CENTAINES
-    ADDWF RESTE_LO, 1           ; On remet la centaine qui manque
+NEXTSTEP_HUNDREDTHS
+    BC DIV_HUNDREDTHS
+    DECF HUNDREDTHS
+    ADDWF REST_LO, 1		; Putting back the missing 100
     
-    ; On passe aux dizaines    
-DIV_DIZAINES
+; Dividing by tens packets    
+DIV_TENS
     MOVLW d'10'
-    CPFSLT DIZAINES
-    CALL DIZAINES_RETENUE
-    INCF DIZAINES
+    CPFSLT TENS
+    CALL TENS_RETENUE
+    INCF TENS
 
     
-    SUBWF RESTE_LO, 1           ; On retire 10 au reste
-    BN SUITE_DIZAINES
-    BRA DIV_DIZAINES
+    SUBWF REST_LO, 1		; Sub 100 to the rest
+    BN NEXTSTEP_TENS		; If we subbed to much, skip
+    BRA DIV_TENS
     
-SUITE_DIZAINES
-    DECF DIZAINES
-    ADDWF RESTE_LO, 1          ; On remet la dizaine qui manque
+NEXTSTEP_TENS
+    DECF TENS
+    ADDWF REST_LO, 1		; Putting back the missing 100
     
-    MOVF RESTE_LO,0
-    ADDWF UNITES
+    MOVF REST_LO,0
+    ADDWF UNITS
     MOVLW d'10'
-    CPFSLT UNITES
-    CALL UNITES_RETENUE
+    CPFSLT UNITS
+    CALL UNITS_RETENUE
     
     RETURN
     
@@ -725,7 +727,7 @@ WRITE7
     
     MOVLW b'01010111'	
     CALL VALIDATECMD
-    
+    CENTAINES
     RETURN
     
 ;------------------------------------------------
@@ -833,18 +835,19 @@ SHOWACQ
     ;CALL TOLINE1
     ; MOVF RESULTLO, 0
     ;CALL WRITECHAR
+  
     
-    CALL DIVISION_10
-    MOVF MILLIERS, 0
+    CALL RADIX_10
+    MOVF THOUSANDTHS, 0
     CALL WRITENUMBER
     
-    MOVF CENTAINES, 0
+    MOVF HUNDREDTHS, 0
     CALL WRITENUMBER
    
-    MOVF DIZAINES, 0
+    MOVF TENS, 0
     CALL WRITENUMBER
     
-    MOVF UNITES, 0
+    MOVF UNITS, 0
     CALL WRITENUMBER
     
     CALL WRITEG
