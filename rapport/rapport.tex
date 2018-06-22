@@ -1,0 +1,81 @@
+\documentclass[a4paper,11pt,titlepage]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{pgfplots}
+
+\hypersetup{
+    colorlinks=true, % make the links colored
+    linkcolor=blue, % color TOC links in blue
+    urlcolor=gray, % color URLs in red
+    linktoc=all % 'all' will create links for everything in the TOC
+}
+
+\lstset{
+  basicstyle=\ttfamily,
+  captionpos=b,
+  language=c,
+  frame=single,
+  breaklines=true,
+  commentstyle=\color{mygreen},
+  prebreak=\space\textbackslash
+}
+
+\title{Rapport projet électronique}
+\author{Rémi BOURGEON\\
+\texttt{remi.bourgeon@isen.yncrea.fr}\\\\
+Rodolphe HOUDAS\\
+\texttt{rodolphe.houdas@isen.yncrea.fr}}
+\date{2017-2018}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+%\begin{abstract}
+%\end{abstract}
+
+\section{Description du projet}
+
+\section{Bits de configuration}
+
+Conformément a ce qui avait été fait lors des TP d'électronique numérique, nous avons changé les bits de configuration suivants:\\
+
+
+\begin{lstlisting}
+FOSC  INTIO7
+WDTEN OFF
+LVP   OFF
+\end{lstlisting}
+
+\section{Application d'un coefficient correcteur}
+
+La tension de sortie de la cellule de pesée est linéaire. À l'aide de différents poids, nous avons mesuré et placé sur un graphe les valeurs retournées par le CAN. À ce graphe, nous avons rajouté les valeurs que nous attendions (500 pour 500 grammes par exemple). On peut rapidement voir, à première vue, que la pente provenant du CAN doit être corrigée pour obtenir la même pente que le poids réel. Pour approximer la pente du CAN, nous avons calculé les pentes entre chaque segments puis nous avons fait la moyenne de ceux-ci. Nous avons supprimé une partie des dernières mesures, celles-ci paraissant fausses.\\
+
+\begin{tikzpicture}
+\begin{axis}
+\addplot table [x=Weight, y=CAN output, col sep=comma] {../values.csv};
+\addplot table [x=Weight, y=Weight, col sep=comma] {../values.csv};
+\end{axis}
+\end{tikzpicture}
+
+Une fois la pente trouvée, nous avons pu calculer un coefficient correcteur à appliquer sur la valeur du CAN après suppression de la tare. Pour vérifier notre coefficient, nous avons calculé les valeurs corrigées. On peut observer une différence de maximum $\pm{2}$ grammes.\\
+
+Comme nous ne pouvons pas multiplier par un nombre décimal en assembleur, nous devons multiplier à l'aide d'une fraction qui s'approche le plus possible du coefficient correcteur. En assembleur, pour multiplier par une fraction, il faut multiplier par le numérateur puis faire une division euclidienne par le dénominateur. Comme on multiplie par le numérateur, il faut veiller à ne pas utiliser de valeurs trop élevées pour que la valeur maximum ne déborde pas au-delà des 2 octets disponibles.\\
+
+Nous avons calculé un coefficient correcteur de 1,07954. En arrondissant à 1,08, nous pouvons effectuer la conversion à l'aide d'une fraction $\frac{27}{25}$, ce qui nous permet de rester dans la gamme des valeurs disponibles ($1023 * 27 = 27621$)\\
+
+\section{Problèmes rencontrés}
+
+Lors du premier branchement de la cellule de pesée sur l'oscilloscope, nous n'arrivions pas à observer un changement de tension significatif. Nous avons donc rapidement monté la cellule de pesée sur un support permettant de la manipuler sans la maintenir gauchement sur un bord de table.\\
+
+Une fois la cellule montée sur le support, nous avons pu aisément observer la variation de tension en fonction de la variation de poids et nous avons pu commencer à calculer le gain nécessaire.
+
+\end{document}
