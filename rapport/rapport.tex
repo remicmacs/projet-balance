@@ -48,11 +48,45 @@ Rodolphe HOUDAS\\
 
 Conformément a ce qui avait été fait lors des TP d'électronique numérique, nous avons changé les bits de configuration suivants:\\
 
-
 \begin{lstlisting}
 FOSC  INTIO7
 WDTEN OFF
 LVP   OFF
+\end{lstlisting}
+
+Nous réglons l'horloge à 4Mhz à l'aide du registre \texttt{OSCCON} :\\
+
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+  \hline
+  \multicolumn{8}{|c|}{\texttt{OSCCON}}\\
+  \hline
+  0 & 1 & 0 & 1 & 0 & 0 & 1 & 0\\
+  \hline
+  X & \multicolumn{3}{c|}{Horloge à 4Mhz} & X & X & \multicolumn{2}{c|}{Utilisation de l'horloge interne}\\
+  \hline
+\end{tabular}\\
+
+Nous avons aussi mis en place les bits suivants au démarrage du PIC:
+
+\begin{lstlisting}
+    ; Set the clock
+    ; bit 6-4: Horloge a 4Mhz
+    ; bit 1-0: Utilisation oscillateur interne
+    MOVLW b'01010010'
+    MOVWF OSCCON
+    
+    ; Reglage de INTCON
+    ; Bit 7: Activer les interruptions globales
+    ; Bit 6: Activer les interruptions des peripheriques
+    ; Bit 4: Activer interruption sur INT0
+    BSF INTCON, 4
+    BSF INTCON, 7
+    BSF INTCON, 6
+    ; Reglage de INTCON2
+    ; Bit 6 = 0: Interruption sur front descendant
+    BSF INTCON2, 7
+    BCF INTCON2, 6
+    BCF INTCON, 2
 \end{lstlisting}
 
 \section{Application d'un coefficient correcteur}
