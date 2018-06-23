@@ -8,6 +8,10 @@
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{pgfplots}
+\usepackage{tabularx}
+\usepackage{xcolor}
+
+\newcolumntype{C}{>{\centering\arraybackslash}X}
 
 \hypersetup{
     colorlinks=true, % make the links colored
@@ -22,6 +26,7 @@
   language=c,
   frame=single,
   breaklines=true,
+  upquote=true,
   commentstyle=\color{mygreen},
   prebreak=\space\textbackslash
 }
@@ -56,37 +61,89 @@ LVP   OFF
 
 Nous réglons l'horloge à 4Mhz à l'aide du registre \texttt{OSCCON} :\\
 
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
+% Ok ici on a un bon tableau
+% Le noindent est pour enlever l'indentation (sinon le tableau déborde dans l'autre sens
+% Ici on utilise tabularx qui est une version améliorée de tabular
+% |*{8}{C|} signifie qu'on crée 8 colonnes avec un bord (d'où le |) et dont le contenu est centré
+\noindent
+\begin{tabularx}{\textwidth}{|c|C|C|C|c|c|C|C|}
   \hline
-  \multicolumn{8}{|c|}{\texttt{OSCCON}}\\
+  \multicolumn{8}{|>{\hsize=8\hsize}c|}{\texttt{OSCCON}}\\
   \hline
+  % Ici on met le contenu des bits
   0 & 1 & 0 & 1 & 0 & 0 & 1 & 0\\
   \hline
-  X & \multicolumn{3}{c|}{Horloge à 4Mhz} & X & X & \multicolumn{2}{c|}{Utilisation de l'horloge interne}\\
+  % Et ici les explications
+  X 
+  & \multicolumn{3}{>{\hsize=3\hsize}C|}{Horloge à 4Mhz} 
+  & X & X 
+  & \multicolumn{2}{>{\hsize=2\hsize}C|}{Utilisation de l'horloge interne}\\
   \hline
-\end{tabular}\\
+\end{tabularx}\\
 
-Nous avons aussi mis en place les bits suivants au démarrage du PIC:
+Et on règle les interruptions:\\
+
+\noindent
+\begin{tabularx}{\textwidth}{|C|C|c|C|c|c|c|c|}
+  \hline
+  \multicolumn{8}{|>{\hsize=8\hsize}c|}{\texttt{INTCON}}\\
+  \hline
+  % Ici on met le contenu des bits
+  1 & 1 & X & 1 & X & X & X & X\\
+  \hline
+  % Et ici les explications
+  Activation des interruptions globales 
+  & Activation des interruptions périphériques
+  & X
+  & Activation de l'interruption sur INT0
+  & X & X & X & X\\
+  \hline
+\end{tabularx}\\\\
+
+\noindent
+\begin{tabularx}{\textwidth}{|C|C|c|c|c|c|c|c|}
+  \hline
+  \multicolumn{8}{|>{\hsize=8\hsize}c|}{\texttt{INTCON2}}\\
+  \hline
+  % Ici on met le contenu des bits
+  1 & 0 & X & X & X & X & X & X\\
+  \hline
+  % Et ici les explications
+  Interruption sur front descendant
+  & \textit{À compléter}
+  & X & X & X & X & X & X\\
+  \hline
+\end{tabularx}\\
+
+\section{Application de la tare}
+
+Une tare peut être prise lors de l'appui sur le bouton. Celui-ci est relié à une pin capable de déclencher une interruption matérielle pour exécuter une routine.\\
 
 \begin{lstlisting}
-    ; Set the clock
-    ; bit 6-4: Horloge a 4Mhz
-    ; bit 1-0: Utilisation oscillateur interne
-    MOVLW b'01010010'
-    MOVWF OSCCON
-    
-    ; Reglage de INTCON
-    ; Bit 7: Activer les interruptions globales
-    ; Bit 6: Activer les interruptions des peripheriques
-    ; Bit 4: Activer interruption sur INT0
-    BSF INTCON, 4
-    BSF INTCON, 7
-    BSF INTCON, 6
-    ; Reglage de INTCON2
-    ; Bit 6 = 0: Interruption sur front descendant
-    BSF INTCON2, 7
-    BCF INTCON2, 6
-    BCF INTCON, 2
+HIGH_ISR
+    ; Reinitialise le bit dinterruption
+    BCF INTCON, 1
+    CALL TARE
+    RETFIE  FAST
+\end{lstlisting}
+
+La routine de tare prend une mesure de l'entrée analogique et enregistre la valeur brute dans un registre mémoire.\\
+
+\begin{lstlisting}
+TARE
+    CALL ACQUISITION
+    MOVFF RESULTLO, DEAD_WEIGHT
+    RETURN
+\end{lstlisting}
+
+Cette valeur sera soustraite à la valeur mesurée avant conversion et affichage du poids.\\
+
+\begin{lstlisting}
+SHOWACQ
+    CALL CLEARDISPLAY
+    CALL ACQUISITION      ; Recuperation du poids (valeur brute)
+    MOVF DEAD_WEIGHT, 0   
+    SUBWF RESULTLO, 1     ; Application de la tare
 \end{lstlisting}
 
 \section{Application d'un coefficient correcteur}
