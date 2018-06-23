@@ -321,52 +321,65 @@ POLL
     
     RETURN
 
-
-UNITS_RETENUE
+;------------------------------------------------
+; Helper routine to bubble carry from units to tens
+;------------------------------------------------
+UNITS_CARRY
     INCF TENS
     MOVLW d'10'
     CPFSLT TENS
-    CALL TENS_RETENUE
+    CALL TENS_CARRY
     
     SUBWF UNITS
     RETURN
-    
-TENS_RETENUE
+
+;------------------------------------------------
+; Helper routine to bubble carry from tens to hundredths
+;------------------------------------------------    
+TENS_CARRY
     INCF HUNDREDTHS
     MOVLW d'10'
     CPFSLT HUNDREDTHS
-    CALL HUNDREDTHS_RETENUE
+    CALL HUNDREDTHS_CARRY
     
     SUBWF TENS
     RETURN
-    
-HUNDREDTHS_RETENUE
+
+;------------------------------------------------
+; Helper routine to bubble carry from hundredths to thousandths
+;------------------------------------------------    
+HUNDREDTHS_CARRY
     INCF THOUSANDTHS
     MOVLW d'10'
     SUBWF HUNDREDTHS
     RETURN
-    
+
+;------------------------------------------------
+; Helper routine to add packets of 256 to the counters
+;------------------------------------------------    
 ADD_256
     MOVLW d'2'
     ADDWF HUNDREDTHS
     MOVLW d'9'
     CPFSLT HUNDREDTHS
-    CALL HUNDREDTHS_RETENUE
+    CALL HUNDREDTHS_CARRY
     
     MOVLW d'5'
     ADDWF TENS
     MOVLW d'9'
     CPFSLT TENS
-    CALL TENS_RETENUE
+    CALL TENS_CARRY
     
     MOVLW d'6'
     ADDWF UNITS
     MOVLW d'9'
     CPFSLT UNITS
-    CALL UNITS_RETENUE
+    CALL UNITS_CARRY
     RETURN
     
-
+;------------------------------------------------
+; Helper routine to add packets of 512 to the counters
+;------------------------------------------------    
 ADD_512
     CALL ADD_256
     CALL ADD_256
@@ -374,6 +387,8 @@ ADD_512
 
 ;------------------------------------------------
 ; Divide a number to display in radix 10
+; The results are stored in global variables :
+;   UNITS, TENS, HUNDREDTHS and THOUSANDTHS
 ;------------------------------------------------    
 RADIX_10
     ; Memory clear
@@ -393,8 +408,8 @@ RADIX_10
     MOVWF REST_LO
     
 
-    ; Inspecting if MSByte is zero
-    ; If MSBytes are != 0 => divide by 256 packets
+    ; Inspecting if Most Significant Byte is zero
+    ; If MSByte are != 0 => divide by 256 packets
 
     MOVF REST_HI, 0
     ANDLW b'00000010'		; 2^9 bit is inspected
@@ -402,7 +417,7 @@ RADIX_10
     TSTFSZ BOOL
     CALL ADD_512
     
-    MOVF REST_HI,0
+    MOVF REST_HI, 0
     ANDLW b'00000001'		; 2^8 bit is inspected
     MOVWF BOOL
     TSTFSZ BOOL
@@ -411,8 +426,8 @@ RADIX_10
 ; Dividing by 100 packets
 DIV_HUNDREDTHS
     MOVLW d'10'
-    CPFSLT HUNDREDTHS
-    CALL HUNDREDTHS_RETENUE
+    CPFSLT HUNDREDTHS		; Checking if HUNDREDTHS >= 10
+    CALL HUNDREDTHS_CARRY	; If it is, bubble the carry to thousandths
     INCF HUNDREDTHS
     
     MOVLW d'100'
@@ -429,8 +444,8 @@ NEXTSTEP_HUNDREDTHS
 ; Dividing by tens packets    
 DIV_TENS
     MOVLW d'10'
-    CPFSLT TENS
-    CALL TENS_RETENUE
+    CPFSLT TENS			; Checking if TENS >= 10
+    CALL TENS_CARRY		; If it is, bubble the carry to hundredths
     INCF TENS
 
     
@@ -442,57 +457,78 @@ NEXTSTEP_TENS
     DECF TENS
     ADDWF REST_LO, 1		; Putting back the missing 100
     
-    MOVF REST_LO,0
+; Putting the rest as unit
+    MOVF REST_LO, 0
     ADDWF UNITS
     MOVLW d'10'
     CPFSLT UNITS
-    CALL UNITS_RETENUE
+    CALL UNITS_CARRY		; If UNITS >= 10, bubble the carry to tens
     
     RETURN
-    
+
+; If QUOTIENTLO is about to overflow, increment QUOTIENTHI and clear QUOTIENTLO
 OVERFLOW_25
     INCF QUOTIENTHI
     MOVLW 0x00
     MOVWF QUOTIENTLO
     GOTO DIV_25_CONTINUE
 
+;------------------------------------------------
+; Divide by 25 on two bytes to two bytes
+;   Values have been tested until a max of 27,648
+;    = 1024 * 27, the max value that will be passed to this
+;    routine in this program
+;   
+;   This routine divides the two bytes stored in RESULTHI and RESULTLO
+;   and stores the results in QUOTIENTHI:QUOTIENTLO
+;------------------------------------------------    
 DIVIDE_25
+    ; Clearing working registers
     MOVLW 0x00
     MOVWF QUOTIENTHI
     MOVWF QUOTIENTLO
+    
+    ; Copying values in working variables
     MOVF RESULTHI, 0
     MOVWF REST_HI
     MOVF RESULTLO, 0
     MOVWF REST_LO
     
 DIV_25
+    ; Checking for overflow of QUOTIENTLO
     MOVLW 0xFF
     CPFSLT QUOTIENTLO
     GOTO OVERFLOW_25
-    INCF  QUOTIENTLO
+    INCF  QUOTIENTLO		; If no overflow, increment QUOTIENTLO
     
 DIV_25_CONTINUE
     
     MOVLW d'25'
-    SUBWF REST_LO, 1		; Sub 100 to the rest
-    BN NEXTSTEP_DIV_25	; If we subbed to much, skip
+    SUBWF REST_LO, 1		; Sub 25 to the rest
+    BN NEXTSTEP_DIV_25		; If we subbed to much, skip
     BRA DIV_25
 
 NEXTSTEP_DIV_25
-    BNC NEXTNEXTSTEP_DIV_25
+; The program is here because negative flag was raised
+; To test if it is a true negative, and not a 2's complement negative,
+;   the carry flag is also tested
+    BNC NEXTNEXTSTEP_DIV_25	
     BRA DIV_25
 NEXTNEXTSTEP_DIV_25
+; The negative AND carry flags are raised, so it is a true negative
     MOVLW 0x00
-    CPFSGT REST_HI
+    CPFSGT REST_HI		; Checking if the high rest is empty
     BRA NEXTNEXTNEXTSTEP_DIV_25
-    DECF REST_HI
-    BRA DIV_25
+    DECF REST_HI		; If it is not, decrement high rest
+    BRA DIV_25			; Continue with substractions
 NEXTNEXTNEXTSTEP_DIV_25
+; Program is here when negative AND carry flags are raised AND
+;   the high rest is empty : it is no longer possible to sub 25    
     MOVLW d'25'
-    ADDWF REST_LO
-    DECF QUOTIENTLO
+    ADDWF REST_LO		; adding the missing 25
+    DECF QUOTIENTLO		; decrementing the quotient of the excedent 25
     MOVLW d'13'
-    CPFSLT REST_LO
+    CPFSLT REST_LO		; Rounding up if rest >= 13
     BRA ROUND_25
     
     BRA END_25
@@ -502,22 +538,31 @@ ROUND_25
 
 END_25
     RETURN
-    
+
+;------------------------------------------------
+; Uses the MULWF to multiply RESULTHI:RESULTLO by 27
+;    Stores the results in RESULTHI:RESULTO up to 1024*27 = 27648    
+;------------------------------------------------    
 MUL_27
     MOVLW d'27'
     MULWF RESULTHI
-    MOVF PRODL, WREG
+    MOVF PRODL, 0
     MOVWF RESULTHI
     
     MOVLW d'27'
     MULWF RESULTLO
-    MOVF PRODH, WREG
+    MOVF PRODH, 0
     ADDWF RESULTHI, 1
-    MOVF PRODL, WREG
+    MOVF PRODL, 0
     MOVWF RESULTLO
     
     RETURN
-    
+
+;------------------------------------------------
+; Routine to convert 5/1024 Volts in grams with a 27/25 = 1.08 ratio
+;    Uses the MUL_27 and DIVIDE_25 routines
+;   The global variables used to store values are RESULTHI:RESULTLO
+;------------------------------------------------    
 APPLY_RATIO
     CALL MUL_27
     CALL DIVIDE_25
@@ -541,9 +586,9 @@ LOOPTEMP
     BRA LOOPTEMP
     RETURN
 
-    
-SEND_INSTRUCTION
-    MOVWF DATA_INS
+; Dead code ?   
+;SEND_INSTRUCTION
+;    MOVWF DATA_INS
     
 
 ;------------------------------------------------
@@ -597,7 +642,9 @@ WRITECRLF
     
     RETURN
     
-    
+;------------------------------------------------
+; Move cursor to line 1 (Line 0 is the first row)
+;------------------------------------------------    
 TOLINE1
     MOVLW b'01001100'
     CALL VALIDATECMD
@@ -607,7 +654,9 @@ TOLINE1
     
     RETURN
     
-    
+;------------------------------------------------
+; Move cursor to line 2 (Line 0 is the first row)
+;------------------------------------------------  
 TOLINE2
     MOVLW b'01001100'
     CALL VALIDATECMD
@@ -617,7 +666,9 @@ TOLINE2
     
     RETURN
     
- 
+;------------------------------------------------
+; Move cursor to line 3 (Line 0 is the first row)
+;------------------------------------------------ 
 TOLINE3
     MOVLW b'01001001'
     CALL VALIDATECMD
@@ -893,59 +944,37 @@ MAIN_PROG CODE                      ; let linker place main program
 BEGINNING
     CALL INIT
     CALL INITSCREEN
-    
-    
-  
-;WRITEDISPLAY
-;    CALL WRITEW
-;    CALL WRITEE
-;    CALL WRITEL
-;    CALL WRITEC
-;    CALL WRITEO
-;    CALL WRITEM
-;    CALL WRITEE
-;    
-;    CALL TOLINE2
-;    
-;    CALL WRITE0
-;    CALL WRITE1
-;    CALL WRITE2
-;    CALL WRITE3
-;    CALL WRITE4
-;    CALL WRITE5
-;    CALL WRITE6
-;    CALL WRITE7
-;    CALL WRITE8
-;    CALL WRITE9
-    
-CALL TARE
+    ; Tare the dead weight
+    CALL TARE
    
 SHOWACQ
     CALL CLEARDISPLAY
-    CALL ACQUISITION
-    MOVF DEAD_WEIGHT, 0
+    CALL ACQUISITION		    ; Retrieving CAN values
+    MOVF DEAD_WEIGHT, 0		    ; Applying tare
     SUBWF RESULTLO, 1
-    BN NEG_VALUE
+    BN NEG_VALUE		    ; If value is just below 0, display 0g
     
     
-    ;CALL TOLINE1
-    ; MOVF RESULTLO, 0
-    ;CALL WRITECHAR
-  
-    CALL APPLY_RATIO
-    CALL RADIX_10
+    CALL APPLY_RATIO		    ; Grams conversion
+    CALL RADIX_10		    ; Division in Units, tens, etc.
+    
+    ; Display the thousandths digit
     MOVF THOUSANDTHS, 0
     CALL WRITENUMBER
     
+    ; Display the hundredths digit
     MOVF HUNDREDTHS, 0
     CALL WRITENUMBER
-   
+    
+    ; Display the tens digit
     MOVF TENS, 0
     CALL WRITENUMBER
     
+    ; Display the units digits
     MOVF UNITS, 0
     CALL WRITENUMBER
     
+    ; Write the g of grams
     CALL WRITEG
 
 ; Other temporisation routine to avoid char flicker
