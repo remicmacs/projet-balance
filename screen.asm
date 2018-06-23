@@ -135,8 +135,7 @@ HIGH_ISR
     
 TARE
     CALL ACQUISITION
-    MOVF RESULTLO, 0
-    MOVWF DEAD_WEIGHT
+    MOVFF RESULTLO, DEAD_WEIGHT
     RETURN
 
 ;------------------------------------------------
@@ -401,12 +400,9 @@ RADIX_10
     MOVWF REST_LO
     
     ; Storing numbers to divide
-    MOVF RESULTHI, 0
-    MOVWF REST_HI          
+    MOVFF RESULTHI, REST_HI
     
-    MOVF RESULTLO, 0
-    MOVWF REST_LO
-    
+    MOVFF RESULTLO, REST_LO    
 
     ; Inspecting if Most Significant Byte is zero
     ; If MSByte are != 0 => divide by 256 packets
@@ -489,10 +485,8 @@ DIVIDE_25
     MOVWF QUOTIENTLO
     
     ; Copying values in working variables
-    MOVF RESULTHI, 0
-    MOVWF REST_HI
-    MOVF RESULTLO, 0
-    MOVWF REST_LO
+    MOVFF RESULTHI, REST_HI
+    MOVFF RESULTLO, REST_LO
     
 DIV_25
     ; Checking for overflow of QUOTIENTLO
@@ -546,15 +540,13 @@ END_25
 MUL_27
     MOVLW d'27'
     MULWF RESULTHI
-    MOVF PRODL, 0
-    MOVWF RESULTHI
+    MOVFF PRODL, RESULTHI
     
     MOVLW d'27'
     MULWF RESULTLO
     MOVF PRODH, 0
     ADDWF RESULTHI, 1
-    MOVF PRODL, 0
-    MOVWF RESULTLO
+    MOVFF PRODL, RESULTLO
     
     RETURN
 
@@ -566,10 +558,10 @@ MUL_27
 APPLY_RATIO
     CALL MUL_27
     CALL DIVIDE_25
-    MOVF QUOTIENTLO, 0
-    MOVWF RESULTLO
-    MOVF QUOTIENTHI, 0
-    MOVWF RESULTHI
+    
+    MOVFF QUOTIENTLO, RESULTLO
+    MOVFF QUOTIENTHI, RESULTHI
+    
     RETURN
     
 ;------------------------------------------------
@@ -578,19 +570,13 @@ APPLY_RATIO
     
 UNIT_TEMPO
     ; Load UNIT_WAIT into a temp variable
-    MOVF UNIT_WAIT, 0
-    MOVWF TEMP_COUNT
+    MOVFF UNIT_WAIT, TEMP_COUNT
     
 LOOPTEMP
     DECFSZ TEMP_COUNT
     BRA LOOPTEMP
     RETURN
-
-; Dead code ?   
-;SEND_INSTRUCTION
-;    MOVWF DATA_INS
     
-
 ;------------------------------------------------
 ; Validate a command to the LCD
 ; Set the desired command in W before calling
