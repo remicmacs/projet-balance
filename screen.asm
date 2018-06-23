@@ -102,6 +102,11 @@ TENS    RES 1
 HUNDREDTHS   RES 1
 THOUSANDTHS    RES 1
 BOOL	    RES 1
+	   
+DEAD_WEIGHT RES 1
+ 
+QUOTIENTHI  RES 1
+QUOTIENTLO  RES 1 
 
 
 ;*******************************************************************************
@@ -121,13 +126,18 @@ ISRH      CODE
 HIGH_ISR
     ; Pour l'instant ne fait qu'afficher 7
     BCF INTCON, 1
-    MOVLW d'7'
-    CALL WRITENUMBER
+    CALL TARE
     RETFIE  FAST
 
 ;*******************************************************************************
 ; MAIN PROGRAM
 ;*******************************************************************************
+    
+TARE
+    CALL ACQUISITION
+    MOVF RESULTLO, 0
+    MOVWF DEAD_WEIGHT
+    RETURN
 
 ;------------------------------------------------
 ; PIC configuration routine
@@ -138,6 +148,11 @@ INIT
     ; so 1 instruction = 1µs
     MOVLW d'11'
     MOVWF UNIT_WAIT
+    
+    
+    ; Init DEAD_WEIGHT value at 0    
+    MOVLW 0x00
+    MOVWF DEAD_WEIGHT
 
     ; Init ports routine  
     ;MOVLB 0xF	    ; Selecting memory bank
@@ -435,6 +450,83 @@ NEXTSTEP_TENS
     
     RETURN
     
+OVERFLOW_25
+    INCF QUOTIENTHI
+    MOVLW 0x00
+    MOVWF QUOTIENTLO
+    GOTO DIV_25_CONTINUE
+
+DIVIDE_25
+    MOVLW 0x00
+    MOVWF QUOTIENTHI
+    MOVWF QUOTIENTLO
+    MOVF RESULTHI, 0
+    MOVWF REST_HI
+    MOVF RESULTLO, 0
+    MOVWF REST_LO
+    
+DIV_25
+    MOVLW 0xFF
+    CPFSLT QUOTIENTLO
+    GOTO OVERFLOW_25
+    INCF  QUOTIENTLO
+    
+DIV_25_CONTINUE
+    
+    MOVLW d'25'
+    SUBWF REST_LO, 1		; Sub 100 to the rest
+    BN NEXTSTEP_DIV_25	; If we subbed to much, skip
+    BRA DIV_25
+
+NEXTSTEP_DIV_25
+    BNC NEXTNEXTSTEP_DIV_25
+    BRA DIV_25
+NEXTNEXTSTEP_DIV_25
+    MOVLW 0x00
+    CPFSGT REST_HI
+    BRA NEXTNEXTNEXTSTEP_DIV_25
+    DECF REST_HI
+    BRA DIV_25
+NEXTNEXTNEXTSTEP_DIV_25
+    MOVLW d'25'
+    ADDWF REST_LO
+    DECF QUOTIENTLO
+    MOVLW d'13'
+    CPFSLT REST_LO
+    BRA ROUND_25
+    
+    BRA END_25
+    
+ROUND_25
+    INCF QUOTIENTLO
+
+END_25
+    RETURN
+    
+MUL_27
+    MOVLW d'27'
+    MULWF RESULTHI
+    MOVF PRODL, WREG
+    MOVWF RESULTHI
+    
+    MOVLW d'27'
+    MULWF RESULTLO
+    MOVF PRODH, WREG
+    ADDWF RESULTHI, 1
+    MOVF PRODL, WREG
+    MOVWF RESULTLO
+    
+    RETURN
+    
+APPLY_RATIO
+    CALL MUL_27
+    CALL DIVIDE_25
+    MOVF QUOTIENTLO, 0
+    MOVWF RESULTLO
+    MOVF QUOTIENTHI, 0
+    MOVWF RESULTHI
+    RETURN
+    
 ;------------------------------------------------
 ; Wait for 38µs
 ;------------------------------------------------
@@ -727,7 +819,6 @@ WRITE7
     
     MOVLW b'01010111'	
     CALL VALIDATECMD
-    CENTAINES
     RETURN
     
 ;------------------------------------------------
@@ -826,17 +917,22 @@ BEGINNING
 ;    CALL WRITE7
 ;    CALL WRITE8
 ;    CALL WRITE9
+    
+CALL TARE
    
 SHOWACQ
     CALL CLEARDISPLAY
     CALL ACQUISITION
+    MOVF DEAD_WEIGHT, 0
+    SUBWF RESULTLO, 1
+    BN NEG_VALUE
     
     
     ;CALL TOLINE1
     ; MOVF RESULTLO, 0
     ;CALL WRITECHAR
   
-    
+    CALL APPLY_RATIO
     CALL RADIX_10
     MOVF THOUSANDTHS, 0
     CALL WRITENUMBER
@@ -871,7 +967,14 @@ SHOWACQWAIT1
                
     GOTO $                          ; loop forever
     
-
-
+NEG_VALUE
+    CALL WRITE0
+    CALL WRITE0
+    CALL WRITE0
+    CALL WRITE0
+   
+    CALL WRITEG
+   
+    BRA LONG_WAITING
     
     END
