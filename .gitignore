@@ -3,4 +3,12 @@
 *.un~
 .*.swp
 .*.swo
-
+*.pdf
+*.aux
+*.toc
+*.out
+*.gz
+*.log
+*.fls
+*.fdb_latexmk
+.~*
