@@ -49,6 +49,10 @@ Rodolphe HOUDAS\\
 
 \section{Description du projet}
 
+\section{Choix de la résistance de gain}
+
+L'amplificateur d'instrumentation INA118 utilise une résistance entre ses bornes $1$ et $8$ pour sélectionner le gain. Nos mesures nous ont permis de trouver que la cellule de pesée renvoie $5mV$ à charge pleine. Pour couvrir la plage de 0 à 5V de l'entrée analogique, nous avions besoin d'un gain de 1000. La datasheet de l'INA118 nous indique qu'il nous faut une résistance de 50$\Omega$ pour un gain de 1000.  
+
 \section{Bits de configuration}
 
 Conformément a ce qui avait été fait lors des TP d'électronique numérique, nous avons changé les bits de configuration suivants:\\
