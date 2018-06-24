@@ -51,7 +51,33 @@ Rodolphe HOUDAS\\
 
 \section{Choix de la résistance de gain}
 
-L'amplificateur d'instrumentation INA118 utilise une résistance entre ses bornes $1$ et $8$ pour sélectionner le gain. Nos mesures nous ont permis de trouver que la cellule de pesée renvoie $5mV$ à charge pleine. Pour couvrir la plage de 0 à 5V de l'entrée analogique, nous avions besoin d'un gain de 1000. La datasheet de l'INA118 nous indique qu'il nous faut une résistance de 50$\Omega$ pour un gain de 1000.  
+L'amplificateur d'instrumentation INA118 utilise une résistance entre ses bornes $1$ et $8$ pour sélectionner le gain. Nos mesures nous ont permis de trouver que la cellule de pesée renvoie $5mV$ à charge pleine. Pour couvrir la plage de 0 à 5V de l'entrée analogique, nous avions besoin d'un gain de 1000. La datasheet de l'INA118 nous indique qu'il nous faut une résistance de 50$\Omega$ pour un gain de 1000.
+
+\section{De l'utilisation du microcontrôleur}
+Le montage conçu pour le projet utilise le microcontrôleur 8 bits PIC18F46K22.
+Le microcontrôleur vient remplir le rôle d'orchestrateur entre les fonctionnalités du montage. En effet, il faut au moins un microcontrôleur pour contrôler l'écran LCD. Le PIC est aussi dôté d'un CAN (Convertisseur Analogique Numérique), ce qui lui permet de récupérer le signal renvoyé par la cellule de pesée et de pouvoir le numériser sur 8 ou 10 bits.
+\subsection{Pourquoi ce PIC en particulier}
+La première question que nous nous sommes posés a été de comprendre pourquoi ce PIC avait été sélectionné alors que nous en avions utilisé un autre durant les séances de TP.
+D'abord il faut justifier l'évidence qui est qu'on a sélectionné un PIC18 plutôt qu'un microcontrôleur d'une autre marque (ou qu'un microcontrôleur 16 bits) pour des raisons de facilité. Nous avions de l'expérience avec les microcontrôleurs de cette gamme et par conséquent cela nous permettait de réutiliser nos connaissances et les bouts de programme dont nous disposions déjà, ce que nous avons fait.
+
+En revanche, il n'était pas évident de comprendre pourquoi on utilisait le PIC18F46K22 plutôt que le PICF45K20 que nous avions utilisé en TP. La raison apparente est que les PICs du TP étaient déjà montés sur des cartes de prototypage, avec LEDs, potentiomètres, interrupteurs, etc. Cette carte était donc utile pour tester aisément les différentes fonctionnalités du PIC, mais ne permettait pas d'utiliser le PIC à d'autres fins. Nous disposions donc de ce que Microchip appelle la "Demo board", soit une carte de composants accompagnée d'un PIC pour explorer les fonctionnalités des PICs et prototyper quelques fonctionnalités simples sur les emplacements de prototypage. Cependant les pattes étant soudées à la carte, il n'y a pas vraiment moyen de changer la destination des différentes entrées et sorties.
+Ceci étant dit, les PICF45K20 existent sans carte de démonstration, donc M. Lambert aurait pu les sélectionner pour le projet.
+En comparant les prix, on se rend compte que le PIC18F46K22 est plus cher que le PIC18F45K20 (2,69 € vs. 1,86 € pour dizaine de microcontrôleurs). Donc si le prix ne justifie pas le choix de ce modèle, c'est qu'il doit avoir des caractéristiques intrinsèques différentes. Après examination attentive des premières pages de la datasheet des deux microcontrôleurs, je suis arrivé à déterminé que la seule différence dans les caractéristiques significatives était la consommation de courant ( < 20 nA en veille pour le modèle choisi vs. < 100 nA pour le modèle de TP).
+Ce choix se justifie notamment parce que la destination du PIC sera d'être utilisé dans un montage avec une pile 9 V. Par conséquent un montage consommant cinq fois moins revient à proposer cinq fois plus d'autonomie. 
+
+\section{Rôle du potentiomètre}
+Le potentiomètre est une résistance variable. Elle est branchée sur la patte V0 de l'écran LCD, ce qui correspond à l'ajustement du contraste. En faisant rentrer une référence plus ou moins importante sur cette patte, l'écran va afficher un fond pour les caractères qui va être plus ou moins intense. Le potentiomètre est donc là pour permettre un ajustement du contraste.
+\begin{figure}
+  \begin{center}
+    \includegraphics{./img/LCD_Supply.png}
+    \caption{Fig 1. : Extrait de la datasheet de l'écran LCD}
+    \label{fig:}
+  \end{center}
+\end{figure}
+
+\section{Rôle du régulateur de tension}
+Le régulateur de tension permet de convertir une tension délivrée par une pile 9 V en 5 V, ce qui est la tension acceptée par le PIC, le LCD et l'INA.
+
 
 \section{Bits de configuration}
 
