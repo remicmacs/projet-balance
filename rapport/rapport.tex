@@ -12,6 +12,7 @@
 \usepackage{xcolor}
 \usepackage{eurosym}
 \usepackage{upquote}
+\usepackage[section]{placeins}
 
 \newcolumntype{C}{>{\centering\arraybackslash}X}
 
@@ -51,9 +52,46 @@ Rodolphe HOUDAS\\
 
 \section{Description du projet}
 
+\section{Estimation du coût}
+
+\begin{tabularx}{\textwidth}{l|c|c|c}
+Composant&Quantité&Prix unitaire&Prix total\\
+\hline
+INA118P&1&9,57 \euro&9,57 \euro\\
+PIC18F46K22&1&3,13 \euro&3,13 \euro\\
+MC42004A6WK-BNMLW-V2&1&17,09 \euro&17,09 \euro\\
+MCCBL1A16SILP-16DILS-150&1&4,34 \euro&4,34 \euro\\
+LM7805CT&1&1,12 \euro&1,12 \euro\\
+Cellule de pesée&1&2,26 \euro&2,26 \euro\\
+Support DIP 40 broches&1&1,57 \euro&1,57 \euro\\
+Support DIP 8 broches&1&0,63 \euro&0,63 \euro\\
+Potentiomètre 3296W-1-103LF&1&1,98 \euro&1,98 \euro\\
+Interrupteur&1&0,12 \euro&0,12 \euro\\
+Résistance 4,7 kOhms&1&0,10 \euro&0,10 \euro\\
+Résistance 10 kOhms&1&0,22 \euro&0,22 \euro\\
+Résistance 56 Ohms&1&0,08 \euro&0,08 \euro\\
+Condensateur 100nF&2&0,20 \euro&0,40 \euro\\
+PCB&1&1,20 \euro&1,20 \euro\\
+6 pins mâles&1&0,43 \euro&0,43 \euro\\
+8x2 pins mâles&1&0,78 \euro&0,78 \euro\\
+2 sockets femelle&1&0,63 \euro&0,63 \euro\\
+\hline
+\multicolumn{3}{c|}{TOTAL} & 45,65 \euro\\
+\end{tabularx}
+
 \section{Choix de la résistance de gain}
 
-L'amplificateur d'instrumentation INA118 utilise une résistance entre ses bornes $1$ et $8$ pour sélectionner le gain. Nos mesures nous ont permis de trouver que la cellule de pesée renvoie $5mV$ à charge pleine. Pour couvrir la plage de 0 à 5V de l'entrée analogique, nous avions besoin d'un gain de 1000. La datasheet de l'INA118 nous indique qu'il nous faut une résistance de 50$\Omega$ pour un gain de 1000.
+L'amplificateur d'instrumentation INA118 utilise une résistance entre ses bornes $1$ et $8$ pour sélectionner le gain. À l'aide d'un montage permettant de fixer la cellule de pesée à un plateau, nous avons fait des essais et mesurés une tension de sortie de 2,5 mV pour un poids de 500 grammes. Nous avons pu en déduire que la cellule de pesée renvoie $5mV$ à charge pleine. Pour couvrir la plage de 0 à 5V de l'entrée analogique, nous avions besoin d'un gain de 1000. La datasheet de l'INA118 nous indique qu'il nous faut une résistance de 50$\Omega$ pour un gain de 1000. Nos essais avec une résistance de 50$\Omega$ nous ont révélé que le signal saturait avant d'atteindre une différence de 1000g par rapport au poids initial du plateau. Nous avons donc opté pour une résistance de 56$\Omega$. Celle-ci nous permet d'obtenir un gain de 893 ce qui nous donne une plage allant de 0V pour 0g à 4,47V pour 1000g ce qui nous permet d'obtenir une marge pour le poids du plateau et la détection d'une surcharge.
+
+\section{Les condensateurs}
+
+Les 2 condensateurs présents aux bornes de l'alimentation du PIC tiennent le rôle de condensateurs de découplage. Ceux-ci permettent d'améliorer l'immunité aux perturbations electromagnétiques en évacuant les harmoniques de hautes fréquence vers la masse.
+
+\section{Les résistance de tirage}
+
+Une résistance $R_3$ est présente entre la patte $INT0$ du PIC et la masse. Celle ci a pour rôle d'amener la patte à un potentiel dans le cas où l'interrupteur ne serait pas pressé, équivalent à un circuit ouvert. En l'absence de celle-ci la patte est dite "flottante" et la valeur lue par le microcontrôleur est aléatoire et peut donner lieu à de fausses détections. Il est de bonne pratique de choisir une résistance de l'ordre de 1-10 k$\Omega$ de sorte à ce qu'il n'y ait pas trop de courant lorsque l'interrupteur est pressé. Nous avons choisi une résistance de 4,7 k$\Omega$, sans raison particulière.\\
+
+De la même manière, la résistance présente entre la borne $MCLR$ du PIC et $Vcc$ est utilisé comme résistance de tirage pour la programmation : si $MCLR$ est bas, le microcontrôleur redémarrera et le programmateur peut forcer $MCLR$ à l'état bas lorsqu'il souhaite redémarrer le microcontrôleur.
 
 \section{De l'utilisation du microcontrôleur}
 Le montage conçu pour le projet utilise le microcontrôleur 8 bits PIC18F46K22.
@@ -137,8 +175,8 @@ Et on règle les interruptions:\\
   1 & 0 & X & X & X & X & X & X\\
   \hline
   % Et ici les explications
+  Désactivation des résistances de tirage &
   Interruption sur front descendant
-  & \textit{À compléter}
   & X & X & X & X & X & X\\
   \hline
 \end{tabularx}\\
