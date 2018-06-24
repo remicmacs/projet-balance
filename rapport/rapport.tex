@@ -52,7 +52,7 @@ Rodolphe HOUDAS\\
 
 \section{Description du projet}
 
-Le projet est de réaliser une balance de cuisine en associant les connaissances acquises en électronique numérique et analogique. La carte est déjà conçue et la plupart des choix de conceptions ont été réalisés par M. Lambert. La tâche qui nous incombe est de dimensionner les valeurs de résistance pour obtenir des valeurs précises de pesées, et de programmer le microcontrôleur pour piloter l'écran LCD, et afficher les valeurs numérisées sur cet écran. 
+Le projet est de réaliser une balance de cuisine en associant les connaissances acquises en électronique numérique et analogique. La carte est déjà conçue et la plupart des choix de conceptions ont été réalisés par M. Lambert. La tâche qui nous incombe est de dimensionner les valeurs de résistance pour obtenir des valeurs précises de pesées, et de programmer le microcontrôleur pour piloter l'écran LCD, et afficher les valeurs numérisées sur cet écran.\\
 
 Le projet nous permet aussi de manipuler différents outils de conception électronique. Cela implique de souder les différents composants, de vérifier la continuité des pistes de la carte et l'absence de court-circuits, etc. 
 
@@ -101,21 +101,28 @@ Une résistance $R_3$ est présente entre la patte $INT0$ du PIC et la masse. Ce
 De la même manière, la résistance présente entre la borne $MCLR$ du PIC et $Vcc$ est utilisé comme résistance de tirage pour la programmation : si $MCLR$ est bas, le microcontrôleur redémarrera et le programmateur peut forcer $MCLR$ à l'état bas lorsqu'il souhaite redémarrer le microcontrôleur.
 
 \section{De l'utilisation du microcontrôleur}
-Le montage conçu pour le projet utilise le microcontrôleur 8 bits PIC18F46K22.
+
+Le montage utilise le microcontrôleur 8 bits PIC18F46K22.\\
+
 Le microcontrôleur vient remplir le rôle d'orchestrateur entre les fonctionnalités du montage. En effet, il faut au moins un microcontrôleur pour contrôler l'écran LCD. Le PIC est aussi dôté d'un CAN (Convertisseur Analogique Numérique), ce qui lui permet de récupérer le signal renvoyé par la cellule de pesée et de pouvoir le numériser sur 8 ou 10 bits.
+
 \subsection{Pourquoi ce PIC en particulier}
-La première question que nous nous sommes posés a été de comprendre pourquoi ce PIC avait été sélectionné alors que nous en avions utilisé un autre durant les séances de TP.
-D'abord il faut justifier l'évidence qui est qu'on a sélectionné un PIC18 plutôt qu'un microcontrôleur d'une autre marque (ou qu'un microcontrôleur 16 bits) pour des raisons de facilité. Nous avions de l'expérience avec les microcontrôleurs de cette gamme et par conséquent cela nous permettait de réutiliser nos connaissances et les bouts de programme dont nous disposions déjà, ce que nous avons fait.
 
-En revanche, il n'était pas évident de comprendre pourquoi on utilisait le PIC18F46K22 plutôt que le PICF45K20 que nous avions utilisé en TP. La raison apparente est que les PICs du TP étaient déjà montés sur des cartes de prototypage, avec LEDs, potentiomètres, interrupteurs, etc. Cette carte était donc utile pour tester aisément les différentes fonctionnalités du PIC, mais ne permettait pas d'utiliser le PIC à d'autres fins. Nous disposions donc de ce que Microchip appelle la "Demo board", soit une carte de composants accompagnée d'un PIC pour explorer les fonctionnalités des PICs et prototyper quelques fonctionnalités simples sur les emplacements de prototypage. Cependant les pattes étant soudées à la carte, il n'y a pas vraiment moyen de changer la destination des différentes entrées et sorties.
-Ceci étant dit, les PICF45K20 existent sans carte de démonstration, donc M. Lambert aurait pu les sélectionner pour le projet.
+La première question que nous nous sommes posés a été de comprendre pourquoi ce PIC avait été sélectionné alors que nous en avions utilisé un autre durant les séances de TP.\\
 
-En comparant les prix, on se rend compte que le PIC18F46K22 est plus cher que le PIC18F45K20 (2,87 \euro  vs. 2,15 \euro  pour dizaine de microcontrôleurs chez Mouser). Donc si le prix ne justifie pas le choix de ce modèle, c'est qu'il doit avoir des caractéristiques intrinsèques différentes. Après examination attentive des premières pages de la datasheet des deux microcontrôleurs, je suis arrivé à déterminé que la seule différence dans les caractéristiques significatives était la consommation de courant ( < 20 nA en veille pour le modèle choisi vs. < 100 nA pour le modèle de TP).
+D'abord il faut justifier l'évidence qui est qu'on a sélectionné un PIC18 plutôt qu'un microcontrôleur d'une autre marque (ou qu'un microcontrôleur 16 bits) pour des raisons de facilité. Nous avions de l'expérience avec les microcontrôleurs de cette gamme et par conséquent cela nous permettait de réutiliser nos connaissances et les bouts de programme dont nous disposions déjà, ce que nous avons fait.\\
+
+En revanche, il n'était pas évident de comprendre pourquoi on utilisait le PIC18F46K22 plutôt que le PICF45K20 que nous avions utilisé en TP. La raison apparente est que les PICs du TP étaient déjà montés sur des cartes de prototypage, avec LEDs, potentiomètres, interrupteurs, etc. Cette carte était donc utile pour tester aisément les différentes fonctionnalités du PIC, mais ne permettait pas d'utiliser le PIC à d'autres fins. Nous disposions donc de ce que Microchip appelle la "Demo board", soit une carte de composants accompagnée d'un PIC pour explorer les fonctionnalités des PICs et prototyper quelques fonctionnalités simples sur les emplacements de prototypage. Cependant les pattes étant soudées à la carte, il n'y a pas vraiment moyen de changer la destination des différentes entrées et sorties.\\
+
+Ceci étant dit, les PICF45K20 existent sans carte de démonstration, donc M. Lambert aurait pu les sélectionner pour le projet.\\
+
+En comparant les prix, on se rend compte que le PIC18F46K22 est plus cher que le PIC18F45K20 (2,87 \euro  vs. 2,15 \euro  pour dizaine de microcontrôleurs chez Mouser). Donc si le prix ne justifie pas le choix de ce modèle, c'est qu'il doit avoir des caractéristiques intrinsèques différentes. Après examination attentive des premières pages de la datasheet des deux microcontrôleurs, je suis arrivé à déterminé que la seule différence dans les caractéristiques significatives était la consommation de courant ( < 20 nA en veille pour le modèle choisi vs. < 100 nA pour le modèle de TP).\\
 
 Ce choix se justifie notamment parce que la destination du PIC sera d'être utilisé dans un montage avec une pile 9 V. Par conséquent un montage consommant cinq fois moins revient à proposer cinq fois plus d'autonomie. 
 
 \section{Rôle du potentiomètre}
-Le potentiomètre est une résistance variable. Elle est branchée sur la patte V0 de l'écran LCD, ce qui correspond à l'ajustement du contraste. En faisant rentrer une référence plus ou moins importante sur cette patte, l'écran va afficher un fond pour les caractères qui va être plus ou moins intense. Le potentiomètre est donc là pour permettre un ajustement du contraste.
+
+Le potentiomètre est une résistance variable. Elle est branchée sur la patte V0 de l'écran LCD, ce qui correspond à l'ajustement du contraste. En faisant rentrer une référence plus ou moins importante sur cette patte, l'écran va afficher un fond pour les caractères qui va être plus ou moins intense. Le potentiomètre est donc là pour permettre un ajustement du contraste.\\
 
 \begin{figure}[h]
   \begin{center}
@@ -126,6 +133,7 @@ Le potentiomètre est une résistance variable. Elle est branchée sur la patte 
 \end{figure}
 
 \section{Rôle du régulateur de tension}
+
 Le régulateur de tension permet de convertir une tension délivrée par une pile 9 V en 5 V, ce qui est la tension acceptée par le PIC, le LCD et l'INA.
 
 \section{Bits de configuration}
@@ -195,28 +203,36 @@ Et on règle les interruptions:\\
 \end{tabularx}\\
 
 \section{Programme en assembleur}
+
 \subsection{Communication avec le LCD}
-La partie du programme chargée de communiquer avec le LCD est clairement ce qu'il y a de plus technique dans le programme en assembleur. En effet, la datasheet du LCD impose un fonctionnement très précis pour les routines de calibration de l'écran et la communication entre l'écran et un microcontrôleur. De plus, la communication s'effectue sur plus de huits bits : il y a 8 bits associés à des commandes et 3 bits spéciaux qui permettent à l'écran de comprendre s'il est en mode lecture, écriture, etc. Les trois bits spéciaux sont RS (Register Select) et R/W (Read / Write) qui définissent le mode de communication actuel avec le pilote de l'écran, et E (Enable) qui valide une commande en passant à l'état bas. Tant que E est à sa valeur haute, les registres à l'entrée du LCD se chargent mais ne sont pas encore relevés par l'écran. Le front descendant va définir le moment où l'écran va relever les valeurs qu'on lui a transmises.
+
+La partie du programme chargée de communiquer avec le LCD est clairement ce qu'il y a de plus technique dans le programme en assembleur. En effet, la datasheet du LCD impose un fonctionnement très précis pour les routines de calibration de l'écran et la communication entre l'écran et un microcontrôleur. De plus, la communication s'effectue sur plus de huits bits : il y a 8 bits associés à des commandes et 3 bits spéciaux qui permettent à l'écran de comprendre s'il est en mode lecture, écriture, etc. Les trois bits spéciaux sont RS (Register Select) et R/W (Read / Write) qui définissent le mode de communication actuel avec le pilote de l'écran, et E (Enable) qui valide une commande en passant à l'état bas. Tant que E est à sa valeur haute, les registres à l'entrée du LCD se chargent mais ne sont pas encore relevés par l'écran. Le front descendant va définir le moment où l'écran va relever les valeurs qu'on lui a transmises.\\
+
 On est donc sensé envoyer 11 bits en paralèlle alors que nos registres n'en comportent que 8. Cela justifie la raison pour laquelle il fallait configurer l'écran pour fonctionner en instructions 4 bits. Nous avions vite deviné que c'était le cas car les pins DB0:3 n'étaient pas connectés sur le montage.
 
 \paragraph{Dimensionnement des routines de temporisation}
-Pour communiquer avec l'écran LCD, le plus important était d'avoir des routines de temporisations correctes. En effet, entre chaque commande envoyée à l'écran LCD, il faut attendre une durée minimale pour que la commande soit validée. Comme la plupart des commandes demandaient une attente de $ 38 \mu s $ . Nous avons donc créé une routine de temporisation software qui prend la valeur d'un registre UNIT\textunderscore WAIT et la décrémente jusqu'à atteindre la durée désirée. Pour nous assurer du bon fonctionnement de la routine de temporisation nous avons fait un programme qui tourne en boucle afin de générer un signal créneau sur une des pattes du microcontrôleur. Puis nous avons capté ce signal créneau au moyen de l'oscilloscope afin de vérifier que la routine de temporisation unitaire permettait bien d'introduire une attente supérieur à $ 38 \mu s $ .
-Nous aurions pu utiliser l'horloge interne pour faire une routine de temporisation hardware, mais comme nous avions un temps limité pour améliorer le code et que les mesures à l'oscilloscope nous permettaient une précision raisonnable, nous avons laissé la routine en l'état.
 
-Une fois cette routine de temporisation unitaire disponible, nous avons utilisé des boucles imbriquées pour introduire les temps d'attentes nécessaires aux différentes commandes. Il est bon de noter par exemple que la commande de calibraton de l'écran demande un temps d'attente de l'ordre de 40 millisecondes, ce qui impliquait au moins deux boucles imbriquées avec des compteurs sur huits bits pour pouvoir attendre suffisamment longtemps ( 0xFF = 256 et $256 * 40 \mu s  \neq 40 ms$ ).
+Pour communiquer avec l'écran LCD, le plus important était d'avoir des routines de temporisations correctes. En effet, entre chaque commande envoyée à l'écran LCD, il faut attendre une durée minimale pour que la commande soit validée. Comme la plupart des commandes demandaient une attente de $ 38 \mu s $ . Nous avons donc créé une routine de temporisation software qui prend la valeur d'un registre UNIT\textunderscore WAIT et la décrémente jusqu'à atteindre la durée désirée. Pour nous assurer du bon fonctionnement de la routine de temporisation nous avons fait un programme qui tourne en boucle afin de générer un signal créneau sur une des pattes du microcontrôleur. Puis nous avons capté ce signal créneau au moyen de l'oscilloscope afin de vérifier que la routine de temporisation unitaire permettait bien d'introduire une attente supérieur à $ 38 \mu s $.\\
 
-Nous avons aussi fait une routine de temporisation encore plus importante pour le rafraichissement de l'écran. Il s'agissait de fixer ce qu'on appelle le framerate, à savoir combien d'affichage différents auront lieu par seconde. En effet, même avec 40 millisecondes d'attente, on affiche encore beaucoup trop de caractères différents par seconde, ce qui rend l'affichage illisible. C'est notamment le cas car les valeurs renvoyées par la cellule de pesée avaient tendance à osciller légèrement de $\pm 2 \times \frac{5}{1024}$ e de volts. Nous avons donc choisi de limiter l'affichage à environ 3 affichages par seconde.
+Nous aurions pu utiliser l'horloge interne pour faire une routine de temporisation hardware, mais comme nous avions un temps limité pour améliorer le code et que les mesures à l'oscilloscope nous permettaient une précision raisonnable, nous avons laissé la routine en l'état.\\
+
+Une fois cette routine de temporisation unitaire disponible, nous avons utilisé des boucles imbriquées pour introduire les temps d'attentes nécessaires aux différentes commandes. Il est bon de noter par exemple que la commande de calibraton de l'écran demande un temps d'attente de l'ordre de 40 millisecondes, ce qui impliquait au moins deux boucles imbriquées avec des compteurs sur huits bits pour pouvoir attendre suffisamment longtemps ( 0xFF = 256 et $256 * 40 \mu s  \neq 40 ms$ ).\\
+
+Nous avons aussi fait une routine de temporisation encore plus importante pour le rafraichissement de l'écran. Il s'agissait de fixer ce qu'on appelle le framerate, à savoir combien d'affichage différents auront lieu par seconde. En effet, même avec 40 millisecondes d'attente, on affiche encore beaucoup trop de caractères différents par seconde, ce qui rend l'affichage illisible. C'est notamment le cas car les valeurs renvoyées par la cellule de pesée avaient tendance à osciller légèrement de $\pm 2 \times \frac{5}{1024}$ e de volts. Nous avons donc choisi de limiter l'affichage à environ 3 affichages par seconde.\\
 
 \paragraph{Conception de la routine de calibration de l'écran}
-La partie la plus hardue de la communication avec l'écran est de la calibrer, et de le faire correctement afin qu'il fonctionne bien en instructions sur 4 bits, autrement toutes les communications qui suivront ne feront que générer des effets inattendus. Le problème que nous avons rencontré est que la routine de calibration est dotée de plusieurs étapes avec des attentes précises et qu'on ne peut avoir d'information quant au fait que cela s'est bien passé. Il faut absolument terminer correctement la routine de calibration avant de voir apparaître un curseur.
-Nous avons essayé par nous-mêmes d'appliquer la procédure décrite dans la datasheet, sans succès : le curseur n'apparaîssait pas.
-Nous avons par la suite consulté M. Lambert qui nous a donné des conseils puis a fini par nous fournir le code de sa routine de calibration. En essayant de comparer son code au nôtre, nous n'avons dans un premier temps pas compris pourquoi notre routine ne fonctionnait pas car nous avions absolument le même déroulement et nous avions mesuré notre temps de temporisation et avions constaté qu'il était bien supérieur à ce qui était nécessaire.
 
-Nous nous sommes finalement rendus compte que le montage conçu inversait la position des bits RS et R/W par rapport aux jeux d'instructions décris dans la datasheet. En échangeant ces deux bits dans toutes les commandes, nous avons eu immédiatement un écran calibré correctement et le message de test que nous avions codé pour constater le fonctionnement s'est affiché sans encombre.
+La partie la plus hardue de la communication avec l'écran est de la calibrer, et de le faire correctement afin qu'il fonctionne bien en instructions sur 4 bits, autrement toutes les communications qui suivront ne feront que générer des effets inattendus. Le problème que nous avons rencontré est que la routine de calibration est dotée de plusieurs étapes avec des attentes précises et qu'on ne peut avoir d'information quant au fait que cela s'est bien passé. Il faut absolument terminer correctement la routine de calibration avant de voir apparaître un curseur.\\
+
+Nous avons essayé par nous-mêmes d'appliquer la procédure décrite dans la datasheet, sans succès : le curseur n'apparaîssait pas.
+Nous avons par la suite consulté M. Lambert qui nous a donné des conseils puis a fini par nous fournir le code de sa routine de calibration. En essayant de comparer son code au nôtre, nous n'avons dans un premier temps pas compris pourquoi notre routine ne fonctionnait pas car nous avions absolument le même déroulement et nous avions mesuré notre temps de temporisation et avions constaté qu'il était bien supérieur à ce qui était nécessaire.\\
+
+Nous nous sommes finalement rendus compte que le montage conçu inversait la position des bits RS et R/W par rapport aux jeux d'instructions décris dans la datasheet. En échangeant ces deux bits dans toutes les commandes, nous avons eu immédiatement un écran calibré correctement et le message de test que nous avions codé pour constater le fonctionnement s'est affiché sans encombre.\\
 
 \paragraph{Routines génériques pour la communication avec le LCD}
 
 Une fois que nous nous sommes assurés que l'écran était correctement configuré, nous avons développé des fonctions utilitaires pour les opérations courantes :
+
 \begin{itemize}
   \item VALIDATECMD charge le registre LATD avec la valeur stockée dans WREG, puis fait passer le bit E (Enable) à l'état bas et temporise pour qu'une commande envoyée soit acceptée par l'écran.
   \item WRITENUMBER affiche un chiffre de 0 à 9 en fonction de la valeur de WREG.
@@ -224,9 +240,9 @@ Une fois que nous nous sommes assurés que l'écran était correctement configur
   \item Des routines comme TOLINE1 et CLEARDISPLAY permettent de déplacer le curseur sur l'écran.
 \end{itemize}
 
-En définitive nous nous sommes assez peu servis des routines TOLINE1 et autres fonctions permettant d'écrire sur plusieurs lignes. Durant nos tests nous avions réussi à nous en servir mais pour la fonctionnalité principale, nous n'en avons pas eu le besoin.
+En définitive nous nous sommes assez peu servis des routines TOLINE1 et autres fonctions permettant d'écrire sur plusieurs lignes. Durant nos tests nous avions réussi à nous en servir mais pour la fonctionnalité principale, nous n'en avons pas eu le besoin.\\
 
-Pour afficher les chiffres nous avions d'abord conçu une table de correspondance avec un computed GOTO qui renverrait dans WREG le code sur 8 bits à afficher sur 4 bits en fonction de la valeur mise dans WREG. Cela fonctionnait dans un programme indépendant, en revanche, une fois intégré dans le programme général, la table ne fonctionnait plus. En effet, ajouter l'index au PCL envoyait le programme environ 200 lignes trop loin. C'est dû au fait que dans le programme indépenant, le faible nombre d'instructions faisaient qu'on pouvait compter les instructions sur uniquement 256 valeurs, alors que dans le programme général, le PCH intervient aussi lorsqu'il y a plus de 256 instructions. Nous nous sommes retrouvés avec un computed GOTO qui ne fonctionnait pas car cela impliquait aussi de gérer le most significant byte du program counter, en plus d'incrémenter le least significant byte (PCL). Comme cela n'est pas possible en une seule instruction et que cela impliquait de faire de la manipulation d'adresse mémoire un peu hasardeuse, nous avons décidé de procéder autrement.
+Pour afficher les chiffres nous avions d'abord conçu une table de correspondance avec un computed GOTO qui renverrait dans WREG le code sur 8 bits à afficher sur 4 bits en fonction de la valeur mise dans WREG. Cela fonctionnait dans un programme indépendant, en revanche, une fois intégré dans le programme général, la table ne fonctionnait plus. En effet, ajouter l'index au PCL envoyait le programme environ 200 lignes trop loin. C'est dû au fait que dans le programme indépenant, le faible nombre d'instructions faisaient qu'on pouvait compter les instructions sur uniquement 256 valeurs, alors que dans le programme général, le PCH intervient aussi lorsqu'il y a plus de 256 instructions. Nous nous sommes retrouvés avec un computed GOTO qui ne fonctionnait pas car cela impliquait aussi de gérer le most significant byte du program counter, en plus d'incrémenter le least significant byte (PCL). Comme cela n'est pas possible en une seule instruction et que cela impliquait de faire de la manipulation d'adresse mémoire un peu hasardeuse, nous avons décidé de procéder autrement.\\
 
 \begin{lstlisting}
 WRITENUMBER
@@ -248,8 +264,10 @@ La fonction WRITENUMBER par du constat très simple que les 4 bits de poids fort
 Le CAN (convertisseur Analogique-Numérique) du PIC récupère le signal de sortie de l'ampli, qui est sur 5 V. Nous avons décidé de capter les valeurs sur 10 bits même si cela complique les calculs par rapport au mode 8 bits qui existe aussi. La raison pour laquelle nous avons choisi ce mode est que sur 8 bits, les 5 volts de dynamique seront répartis sur 256 bits soit des $\frac{5}{256}$ de Volt, alors que 10 bits permettent d'obtenir des $\frac{5}{1024}$ de Volt. Comme à charge pleine, soit 1 Kg, le signal de la cellule de pesée renvoie 5 Volts, on avait donc $\frac{1}{1024}$ e de Kg, ce qui est proche du gramme alors que la numérisation sur 8 bits faisait des pas d'environ 4g, ce qui correspond à une erreur potentielle de $\pm 4$g si le CAN utilise la méthode de la troncature pour la numérisation, ou $\pm 2$g pour la méthode de l'arrondi. Comme l'objectif d'une balance est d'offrir la meilleur précision, nous avons donc décidé d'utiliser l'acquisition sur 10 bits.
 
 \paragraph{Récupération des valeurs numérisées}
+
 Nous avons réutilisé le code réalisé en TP d'électronique numérique. Rien n'a été changé ou presque. 
-Il y a une boucle de polling qui vérifie à chaque tick horloge si l'acquisition est terminée et, quand elle l'est, copie les valeurs dans les registres prévus à cet effet. \\
+Il y a une boucle de polling qui vérifie à chaque tick horloge si l'acquisition est terminée et, quand elle l'est, copie les valeurs dans les registres prévus à cet effet.\\
+
 \begin{lstlisting}
 LAUNCH
     BSF ADCON0,GO
@@ -268,24 +286,28 @@ POLL
 Dans un premier temps nous avons testé l'acquisition avec la routine WRITECHAR qui affiche les caractères correspondant au code passé dans WREG. Nous ne relèvions que les 8 bits de poids faibles de la valeur que nous envoyions tels quels à la routine WRITECHAR. Cela nous a permis de constater que les variations de 1g changeaient bel et bien la valeur captée en temps réel.
 
 \paragraph{Interruption physique}
+
 Pour la fonctionnalité associée à l'interrupteur, nous avons aussi réutilisé telle quelle le code du TP. Nous avons fait une interruption qui affichait le caractère "7" quand on appuie sur le bouton pour constater son bon fonctionnement. Une fois le fonctionnemment établi, nous avons remplacer l'affichage par la routine de tare.
 
 \subsection{Conversion et affichage des valeurs}
+
 \paragraph{Affichage des valeurs}
-Pour l'affichage des valeurs, le défi principal reposait dans la division des deux octets en milliers, centaines, dizaines et unités. La routine RADIX\textunderscore 10 vient opérer cette division en plusieurs étapes en partant des valeurs stockées dans RESULTHI:LO.
-La méthodologie est simple : on s'occupe d'abord de "vider" l'octet de poids fort. En effet, comme le signal acquis est sur dix bits, il ne peut prendre que 4 valeurs : 0x00, 0x01, 0x02 et 0x03, ce qui correspond respectivement à répartir 0, 256, 512 et 768 dans les registres de centaines, dizaines et unités. Cela sera aussi vrai après conversion en grammes puisque la valeur maximale à afficher devrait être 1 Kg soit 1000g.
 
-Une fois l'octet de poids fort "vidé", on retire des centaines à l'octet de poids faible jusqu'à tomber sur une valeur négative, ce qui signifie qu'on a trop retiré. Lorsque ça arrive, on rajoute 100 au reste pour revenir à la dernière valeur non négative, puis on retire des dizaines. À la fin du processus, on prend le reste comme valeur pour les unités.
+Pour l'affichage des valeurs, le défi principal reposait dans la division des deux octets en milliers, centaines, dizaines et unités. La routine RADIX\textunderscore 10 vient opérer cette division en plusieurs étapes en partant des valeurs stockées dans RESULTHI:LO.\\
 
-Pour pouvoir garder des valeurs inférieures à 10 pour chaque registre, on vérifie si on dépasse 10 au moment de l'incrémentation, et si c'est le cas, on fait appel à une des routines de report de la retenue UNITS/TENS/HUNDREDTHS\textunderscore CARRY.
+La méthodologie est simple : on s'occupe d'abord de "vider" l'octet de poids fort. En effet, comme le signal acquis est sur dix bits, il ne peut prendre que 4 valeurs : 0x00, 0x01, 0x02 et 0x03, ce qui correspond respectivement à répartir 0, 256, 512 et 768 dans les registres de centaines, dizaines et unités. Cela sera aussi vrai après conversion en grammes puisque la valeur maximale à afficher devrait être 1 Kg soit 1000g.\\
+
+Une fois l'octet de poids fort "vidé", on retire des centaines à l'octet de poids faible jusqu'à tomber sur une valeur négative, ce qui signifie qu'on a trop retiré. Lorsque ça arrive, on rajoute 100 au reste pour revenir à la dernière valeur non négative, puis on retire des dizaines. À la fin du processus, on prend le reste comme valeur pour les unités.\\
+
+Pour pouvoir garder des valeurs inférieures à 10 pour chaque registre, on vérifie si on dépasse 10 au moment de l'incrémentation, et si c'est le cas, on fait appel à une des routines de report de la retenue UNITS/TENS/HUNDREDTHS\textunderscore CARRY.\\
 
 Une fois ces valeurs réparties dans les registres THOUSANDTHS, HUNDREDTHS, TENS et UNITS, on peut appeler une routine d'affichage qui se charge d'afficher les chiffres dans cet ordre précis.
 
 \paragraph{Application du coefficient de conversion}
 
-Nous avons calculé un coefficient de conversion pour passer des $\frac{5}{1024}$ e de volts aux grammes. Avec le gain choisi et les mesures réalisées, nous avons calculé que le coefficient correcteur était environ 0.7985. Cependant, il n'est pas possible d'obtenir cette valeur sans procéder à des multiplications et des divisions par des chiffres très importants. Nous avons donc arrondit à 1.08 pour pouvoir faire une conversion par un ratio $\frac{27}{25}$, ce qui a le double avantage de limiter les opérations sur deux octets, et de proposer un arrondi pas trop imprécis lors de la division euclidienne.
+Nous avons calculé un coefficient de conversion pour passer des $\frac{5}{1024}$ e de volts aux grammes. Avec le gain choisi et les mesures réalisées, nous avons calculé que le coefficient correcteur était environ 0.7985. Cependant, il n'est pas possible d'obtenir cette valeur sans procéder à des multiplications et des divisions par des chiffres très importants. Nous avons donc arrondit à 1.08 pour pouvoir faire une conversion par un ratio $\frac{27}{25}$, ce qui a le double avantage de limiter les opérations sur deux octets, et de proposer un arrondi pas trop imprécis lors de la division euclidienne.\\
 
-Pour la multipliation, nous nous sommes servis de l'opérateur de multiplication intégré dans les instructions du microcontrôleur. Comme il se charge de déborder sur un deuxième bit et que la multiplication est commutative, il n'y a pas de problème particulier pour l'appliquer :  
+Pour la multipliation, nous nous sommes servis de l'opérateur de multiplication intégré dans les instructions du microcontrôleur. Comme il se charge de déborder sur un deuxième bit et que la multiplication est commutative, il n'y a pas de problème particulier pour l'appliquer :\\
 
 \begin{lstlisting}
 MUL_27
@@ -303,11 +325,11 @@ MUL_27
 \end{lstlisting}
 
 On applique d'abord la multiplication à l'octet de poids fort. On ne s'embarrasse pas du débordement car la valeur maximale est OxO3 * 27 = 0x51.
-Ensuite on applique la multiplication à l'octet de poids faible et on additionne l'overflow au résultat de la multiplication de l'octet de poids fort.
+Ensuite on applique la multiplication à l'octet de poids faible et on additionne l'overflow au résultat de la multiplication de l'octet de poids fort.\\
 
-La division est en revanche plus complexe : il n'y a pas d'opérateur qui se charge de la division dans les instructions. On est par conséquent contraint de faire une division euclidienne via des soustractions répétées. À la fin du processus on obtient un quotient et un reste, et on arrondi le quotient au nombre supérieur si le reste est supérieur ou égal à 13 (soit à peu près la moitié de 25). Cet arrondit introduit donc une erreur inférieur au gramme mais qui peut venir se cumuler aux approximations déjà introduites par le bruit ambiant, la numérisation, la tare et les oscillations.
+La division est en revanche plus complexe : il n'y a pas d'opérateur qui se charge de la division dans les instructions. On est par conséquent contraint de faire une division euclidienne via des soustractions répétées. À la fin du processus on obtient un quotient et un reste, et on arrondi le quotient au nombre supérieur si le reste est supérieur ou égal à 13 (soit à peu près la moitié de 25). Cet arrondit introduit donc une erreur inférieur au gramme mais qui peut venir se cumuler aux approximations déjà introduites par le bruit ambiant, la numérisation, la tare et les oscillations.\\
 
-Une étape générale de la division commence par vérifier si l'octet de poids fort du quotient n'est pas plein. S'il l'est, on le remet à zéro et on incrémente l'octet de poids fort du quotient.
+Une étape générale de la division commence par vérifier si l'octet de poids fort du quotient n'est pas plein. S'il l'est, on le remet à zéro et on incrémente l'octet de poids fort du quotient.\\
 
 \begin{lstlisting}
 OVERFLOW_25
@@ -329,7 +351,8 @@ DIV_25_CONTINUE
 \end{lstlisting}
 
 
-Lors de la soustraction répétée de la division, il a fallu vérifier si le bit de statut négatif était activé. Cependant ce n'est pas suffisant pour vérifier si on a trop retiré ou non car le bit négatif est levé lorsqu'on passe dans la partie négative d'un nombre en complément à deux. Il fallait donc bien vérifier si le bit de carry était aussi activé pour être certain qu'on est bien dans un cas de vrai négatif.
+Lors de la soustraction répétée de la division, il a fallu vérifier si le bit de statut négatif était activé. Cependant ce n'est pas suffisant pour vérifier si on a trop retiré ou non car le bit négatif est levé lorsqu'on passe dans la partie négative d'un nombre en complément à deux. Il fallait donc bien vérifier si le bit de carry était aussi activé pour être certain qu'on est bien dans un cas de vrai négatif.\\
+
 La vérification de la fin de la division se fait donc en trois fois :
 
 \begin{enumerate}
@@ -381,20 +404,22 @@ SHOWACQ
     
 \end{lstlisting}
 
-Pour que la tare soit correcte, il faut bien opérer une soustraction sur deux octets, en commençant par l'octet de poids faible et en faisant remonter une éventuelle retenue à la valeur qu'on soustrait à l'octet de poids fort. 
-On peut noter que la deuxième partie de la soustraction n'est pas réalisée si l'octet de poids fort est déjà égal à zéro.
+Pour que la tare soit correcte, il faut bien opérer une soustraction sur deux octets, en commençant par l'octet de poids faible et en faisant remonter une éventuelle retenue à la valeur qu'on soustrait à l'octet de poids fort.\\
+
+On peut noter que la deuxième partie de la soustraction n'est pas réalisée si l'octet de poids fort est déjà égal à zéro.\\
 
 Compte tenu qu'un poids négatif n'a pas de sens au niveau physique, nous choisissons de bloquer la valeur à un minimum de 0g.
-
 
 \section{Application d'un coefficient correcteur}
 
 La tension de sortie de la cellule de pesée est linéaire. À l'aide de différents poids, nous avons mesuré et placé sur un graphe les valeurs retournées par le CAN. À ce graphe, nous avons rajouté les valeurs que nous attendions (500 pour 500 grammes par exemple). On peut rapidement voir, à première vue, que la pente provenant du CAN doit être corrigée pour obtenir la même pente que le poids réel. Pour approximer la pente du CAN, nous avons calculé les pentes entre chaque segments puis nous avons fait la moyenne de ceux-ci. Nous avons supprimé une partie des dernières mesures, celles-ci paraissant fausses.\\
 
 \begin{tikzpicture}
-\begin{axis}
+\begin{axis}[legend pos=south east, xlabel=Poids (g), ylabel=Valeur lue]
 \addplot table [x=Weight, y=CAN output, col sep=comma] {../values.csv};
+\addlegendentry{Mesuré}
 \addplot table [x=Weight, y=Weight, col sep=comma] {../values.csv};
+\addlegendentry{Réel}
 \end{axis}
 \end{tikzpicture}
 
@@ -408,11 +433,13 @@ Nous avons calculé un coefficient correcteur de 1,07954. En arrondissant à 1,0
 
 Lors du premier branchement de la cellule de pesée sur l'oscilloscope, nous n'arrivions pas à observer un changement de tension significatif. Nous avons donc rapidement monté la cellule de pesée sur un support permettant de la manipuler sans la maintenir gauchement sur un bord de table.\\
 
-Une fois la cellule montée sur le support, nous avons pu aisément observer la variation de tension en fonction de la variation de poids et nous avons pu commencer à calculer le gain nécessaire.
+Une fois la cellule montée sur le support, nous avons pu aisément observer la variation de tension en fonction de la variation de poids et nous avons pu commencer à calculer le gain nécessaire.\\
 
-Cependant, la cellule de pesée avait bien un comportement linéaire mais uniquement à plus de 60g sur le plateau. Au-dessus de 60g, chaque variation de tension apparaissait sur l'oscilloscope, même en rajoutant moins de 10g. En revanche, en-dessous de 60g, la cellule de pesée ne sortait aucune variation de tension. C'est la raison d'origine pour laquelle nous avions décidé de fixer la jauge sur un support : nous cherchions à avoir un montage mécanique plus stable pour arriver à détecter les petites variation de poids. En effet, les mesures des valeurs renvoyées par la cellule de pesée tenue à la main faisaient ressortir le même problème.
+Cependant, la cellule de pesée avait bien un comportement linéaire mais uniquement à plus de 60g sur le plateau. Au-dessus de 60g, chaque variation de tension apparaissait sur l'oscilloscope, même en rajoutant moins de 10g. En revanche, en-dessous de 60g, la cellule de pesée ne sortait aucune variation de tension. C'est la raison d'origine pour laquelle nous avions décidé de fixer la jauge sur un support : nous cherchions à avoir un montage mécanique plus stable pour arriver à détecter les petites variation de poids. En effet, les mesures des valeurs renvoyées par la cellule de pesée tenue à la main faisaient ressortir le même problème.\\
 
-Nous avons donc fini par en parler avec M. Lambert pour comprendre d'où venait le problème, notamment parce que nous soupçonnions une cellule de pesée défectueuse.
+Nous avons donc fini par en parler avec M. Lambert pour comprendre d'où venait le problème, notamment parce que nous soupçonnions une cellule de pesée défectueuse.\\
+
 En montant les câbles de la cellule de pesée à l'envers, nous avons réussi à obtenir des mesures qui saturent à 5 mV lorsque la cellule de pesée ne porte aucun poids, et qui descend linéairement avec le poids qu'on lui ajoute. Nous avons pu constater que la dynamique de la cellule de pesée était tronquée car son zéro était décalé : avec le montage à l'envers, on voyait les variations pour les plus petits poids mais elle finissait par saturer bien plus rapidement que 0mV à 1Kg. Nous avons conclu que la jauge de contrainte devait avoir été déformée et donc avoir un décalage de sa valeur à vide. Il aurait été possible de s'en servir sur une dynamique complète à condition de décaler la valeur référence, mais compte tenu que la carte n'avait pas été conçue pour avoir une référence basse différente pour l'INA et pour le PIC, nous avons choisi plus simplement de changer de cellule de pesée.
 Le changement a aussi confirmé le défaut de la précédente cellule : tous nos défaut de mesure ont disparu instantanément, que ce soit avec la cellule de pesée seule ou montée sur son support.
+
 \end{document}
