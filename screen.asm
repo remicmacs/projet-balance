@@ -103,7 +103,8 @@ HUNDREDTHS   RES 1
 THOUSANDTHS    RES 1
 BOOL	    RES 1
 	   
-DEAD_WEIGHT RES 1
+DEAD_WEIGHTLO RES 1
+DEAD_WEIGHTHI RES 1
  
 QUOTIENTHI  RES 1
 QUOTIENTLO  RES 1 
@@ -124,7 +125,6 @@ ISRHV     CODE    0x0008
 
 ISRH      CODE
 HIGH_ISR
-    ; Pour l'instant ne fait qu'afficher 7
     BCF INTCON, 1
     CALL TARE
     RETFIE  FAST
@@ -135,7 +135,8 @@ HIGH_ISR
     
 TARE
     CALL ACQUISITION
-    MOVFF RESULTLO, DEAD_WEIGHT
+    MOVFF RESULTLO, DEAD_WEIGHTLO
+    MOVFF RESULTHI, DEAD_WEIGHTHI
     RETURN
 
 ;------------------------------------------------
@@ -151,7 +152,8 @@ INIT
     
     ; Init DEAD_WEIGHT value at 0    
     MOVLW 0x00
-    MOVWF DEAD_WEIGHT
+    MOVWF DEAD_WEIGHTLO
+    MOVWF DEAD_WEIGHTHI
 
     ; Init ports routine  
     ;MOVLB 0xF	    ; Selecting memory bank
@@ -936,8 +938,11 @@ BEGINNING
 SHOWACQ
     CALL CLEARDISPLAY
     CALL ACQUISITION		    ; Retrieving CAN values
-    MOVF DEAD_WEIGHT, 0		    ; Applying tare
+    MOVF DEAD_WEIGHTLO, 0		    ; Applying tare
     SUBWF RESULTLO, 1
+    BTFSS STATUS, 0		    ; Check if borrow
+    INCFSZ DEAD_WEIGHTHI, 0	    ; If there is borrow, increment DEAD_WEIGHTHI
+    SUBWF RESULTHI, 1		    ; Sub MSBytes, only if not zero
     BN NEG_VALUE		    ; If value is just below 0, display 0g
     
     
