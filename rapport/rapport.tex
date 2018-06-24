@@ -10,6 +10,7 @@
 \usepackage{pgfplots}
 \usepackage{tabularx}
 \usepackage{xcolor}
+\usepackage{eurosym}
 
 \newcolumntype{C}{>{\centering\arraybackslash}X}
 
@@ -62,14 +63,14 @@ D'abord il faut justifier l'évidence qui est qu'on a sélectionné un PIC18 plu
 
 En revanche, il n'était pas évident de comprendre pourquoi on utilisait le PIC18F46K22 plutôt que le PICF45K20 que nous avions utilisé en TP. La raison apparente est que les PICs du TP étaient déjà montés sur des cartes de prototypage, avec LEDs, potentiomètres, interrupteurs, etc. Cette carte était donc utile pour tester aisément les différentes fonctionnalités du PIC, mais ne permettait pas d'utiliser le PIC à d'autres fins. Nous disposions donc de ce que Microchip appelle la "Demo board", soit une carte de composants accompagnée d'un PIC pour explorer les fonctionnalités des PICs et prototyper quelques fonctionnalités simples sur les emplacements de prototypage. Cependant les pattes étant soudées à la carte, il n'y a pas vraiment moyen de changer la destination des différentes entrées et sorties.
 Ceci étant dit, les PICF45K20 existent sans carte de démonstration, donc M. Lambert aurait pu les sélectionner pour le projet.
-En comparant les prix, on se rend compte que le PIC18F46K22 est plus cher que le PIC18F45K20 (2,69 € vs. 1,86 € pour dizaine de microcontrôleurs). Donc si le prix ne justifie pas le choix de ce modèle, c'est qu'il doit avoir des caractéristiques intrinsèques différentes. Après examination attentive des premières pages de la datasheet des deux microcontrôleurs, je suis arrivé à déterminé que la seule différence dans les caractéristiques significatives était la consommation de courant ( < 20 nA en veille pour le modèle choisi vs. < 100 nA pour le modèle de TP).
+En comparant les prix, on se rend compte que le PIC18F46K22 est plus cher que le PIC18F45K20 (2,69 \euro vs. 1,86 \euro pour dizaine de microcontrôleurs). Donc si le prix ne justifie pas le choix de ce modèle, c'est qu'il doit avoir des caractéristiques intrinsèques différentes. Après examination attentive des premières pages de la datasheet des deux microcontrôleurs, je suis arrivé à déterminé que la seule différence dans les caractéristiques significatives était la consommation de courant ( < 20 nA en veille pour le modèle choisi vs. < 100 nA pour le modèle de TP).
 Ce choix se justifie notamment parce que la destination du PIC sera d'être utilisé dans un montage avec une pile 9 V. Par conséquent un montage consommant cinq fois moins revient à proposer cinq fois plus d'autonomie. 
 
 \section{Rôle du potentiomètre}
 Le potentiomètre est une résistance variable. Elle est branchée sur la patte V0 de l'écran LCD, ce qui correspond à l'ajustement du contraste. En faisant rentrer une référence plus ou moins importante sur cette patte, l'écran va afficher un fond pour les caractères qui va être plus ou moins intense. Le potentiomètre est donc là pour permettre un ajustement du contraste.
-\begin{figure}
+\begin{figure}[h]
   \begin{center}
-    \includegraphics{./img/LCD_Supply.png}
+    \includegraphics[width=0.3\textwidth]{./img/LCD_Supply.png}
     \caption{Fig 1. : Extrait de la datasheet de l'écran LCD}
     \label{fig:}
   \end{center}
