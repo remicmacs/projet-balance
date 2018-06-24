@@ -11,6 +11,7 @@
 \usepackage{tabularx}
 \usepackage{xcolor}
 \usepackage{eurosym}
+\usepackage{upquote}
 
 \newcolumntype{C}{>{\centering\arraybackslash}X}
 
@@ -63,18 +64,14 @@ D'abord il faut justifier l'évidence qui est qu'on a sélectionné un PIC18 plu
 
 En revanche, il n'était pas évident de comprendre pourquoi on utilisait le PIC18F46K22 plutôt que le PICF45K20 que nous avions utilisé en TP. La raison apparente est que les PICs du TP étaient déjà montés sur des cartes de prototypage, avec LEDs, potentiomètres, interrupteurs, etc. Cette carte était donc utile pour tester aisément les différentes fonctionnalités du PIC, mais ne permettait pas d'utiliser le PIC à d'autres fins. Nous disposions donc de ce que Microchip appelle la "Demo board", soit une carte de composants accompagnée d'un PIC pour explorer les fonctionnalités des PICs et prototyper quelques fonctionnalités simples sur les emplacements de prototypage. Cependant les pattes étant soudées à la carte, il n'y a pas vraiment moyen de changer la destination des différentes entrées et sorties.
 Ceci étant dit, les PICF45K20 existent sans carte de démonstration, donc M. Lambert aurait pu les sélectionner pour le projet.
-En comparant les prix, on se rend compte que le PIC18F46K22 est plus cher que le PIC18F45K20 (2,69 \euro vs. 1,86 \euro pour dizaine de microcontrôleurs). Donc si le prix ne justifie pas le choix de ce modèle, c'est qu'il doit avoir des caractéristiques intrinsèques différentes. Après examination attentive des premières pages de la datasheet des deux microcontrôleurs, je suis arrivé à déterminé que la seule différence dans les caractéristiques significatives était la consommation de courant ( < 20 nA en veille pour le modèle choisi vs. < 100 nA pour le modèle de TP).
+
+En comparant les prix, on se rend compte que le PIC18F46K22 est plus cher que le PIC18F45K20 (2,87 \euro  vs. 2,15 \euro  pour dizaine de microcontrôleurs chez Mouser). Donc si le prix ne justifie pas le choix de ce modèle, c'est qu'il doit avoir des caractéristiques intrinsèques différentes. Après examination attentive des premières pages de la datasheet des deux microcontrôleurs, je suis arrivé à déterminé que la seule différence dans les caractéristiques significatives était la consommation de courant ( < 20 nA en veille pour le modèle choisi vs. < 100 nA pour le modèle de TP).
+
 Ce choix se justifie notamment parce que la destination du PIC sera d'être utilisé dans un montage avec une pile 9 V. Par conséquent un montage consommant cinq fois moins revient à proposer cinq fois plus d'autonomie. 
 
 \section{Rôle du potentiomètre}
 Le potentiomètre est une résistance variable. Elle est branchée sur la patte V0 de l'écran LCD, ce qui correspond à l'ajustement du contraste. En faisant rentrer une référence plus ou moins importante sur cette patte, l'écran va afficher un fond pour les caractères qui va être plus ou moins intense. Le potentiomètre est donc là pour permettre un ajustement du contraste.
-\begin{figure}[h]
-  \begin{center}
-    \includegraphics[width=0.3\textwidth]{./img/LCD_Supply.png}
-    \caption{Fig 1. : Extrait de la datasheet de l'écran LCD}
-    \label{fig:}
-  \end{center}
-\end{figure}
+
 
 \section{Rôle du régulateur de tension}
 Le régulateur de tension permet de convertir une tension délivrée par une pile 9 V en 5 V, ce qui est la tension acceptée par le PIC, le LCD et l'INA.
@@ -146,6 +143,82 @@ Et on règle les interruptions:\\
   \hline
 \end{tabularx}\\
 
+\section{Programme en assembleur}
+\subsection{Communication avec le LCD}
+La partie du programme chargée de communiquer avec le LCD est clairement ce qu'il y a de plus technique dans le programme en assembleur. En effet, la datasheet du LCD impose un fonctionnement très précis pour les routines de calibration de l'écran et la communication entre l'écran et un microcontrôleur. De plus, la communication s'effectue sur plus de huits bits : il y a 8 bits associés à des commandes et 3 bits spéciaux qui permettent à l'écran de comprendre s'il est en mode lecture, écriture, etc. Les trois bits spéciaux sont RS (Register Select) et R/W (Read / Write) qui définissent le mode de communication actuel avec le pilote de l'écran, et E (Enable) qui valide une commande en passant à l'état bas. Tant que E est à sa valeur haute, les registres à l'entrée du LCD se chargent mais ne sont pas encore relevés par l'écran. Le front descendant va définir le moment où l'écran va relever les valeurs qu'on lui a transmises.
+On est donc sensé envoyer 11 bits en paralèlle alors que nos registres n'en comportent que 8. Cela justifie la raison pour laquelle il fallait configurer l'écran pour fonctionner en instructions 4 bits. Nous avions vite deviné que c'était le cas car les pins DB0:3 n'étaient pas connectés sur le montage.
+
+\paragraph{Dimensionnement des routines de temporisation}
+Pour communiquer avec l'écran LCD, le plus important était d'avoir des routines de temporisations correctes. En effet, entre chaque commande envoyée à l'écran LCD, il faut attendre une durée minimale pour que la commande soit validée. Comme la plupart des commandes demandaient une attente de $ 38 \mu s $ . Nous avons donc créé une routine de temporisation software qui prend la valeur d'un registre UNIT\textunderscore WAIT et la décrémente jusqu'à atteindre la durée désirée. Pour nous assurer du bon fonctionnement de la routine de temporisation nous avons fait un programme qui tourne en boucle afin de générer un signal créneau sur une des pattes du microcontrôleur. Puis nous avons capté ce signal créneau au moyen de l'oscilloscope afin de vérifier que la routine de temporisation unitaire permettait bien d'introduire une attente supérieur à $ 38 \mu s $ .
+Nous aurions pu utiliser l'horloge interne pour faire une routine de temporisation hardware, mais comme nous avions un temps limité pour améliorer le code et que les mesures à l'oscilloscope nous permettaient une précision raisonnable, nous avons laissé la routine en l'état.
+
+Une fois cette routine de temporisation unitaire disponible, nous avons utilisé des boucles imbriquées pour introduire les temps d'attentes nécessaires aux différentes commandes. Il est bon de noter par exemple que la commande de calibraton de l'écran demande un temps d'attente de l'ordre de 40 millisecondes, ce qui impliquait au moins deux boucles imbriquées avec des compteurs sur huits bits pour pouvoir attendre suffisamment longtemps ( 0xFF = 256 et $256 * 40 \mu s  \neq 40 ms$ ).
+
+Nous avons aussi fait une routine de temporisation encore plus importante pour le rafraichissement de l'écran. Il s'agissait de fixer ce qu'on appelle le framerate, à savoir combien d'affichage différents auront lieu par seconde. En effet, même avec 40 millisecondes d'attente, on affiche encore beaucoup trop de caractères différents par seconde, ce qui rend l'affichage illisible. C'est notamment le cas car les valeurs renvoyées par la cellule de pesée avaient tendance à osciller légèrement de $\pm 2 \times \frac{5}{1024}$ e de volts. Nous avons donc choisi de limiter l'affichage à environ 3 affichages par seconde.
+
+\paragraph{Conception de la routine de calibration de l'écran}
+La partie la plus hardue de la communication avec l'écran est de la calibrer, et de le faire correctement afin qu'il fonctionne bien en instructions sur 4 bits, autrement toutes les communications qui suivront ne feront que générer des effets inattendus. Le problème que nous avons rencontré est que la routine de calibration est dotée de plusieurs étapes avec des attentes précises et qu'on ne peut avoir d'information quant au fait que cela s'est bien passé. Il faut absolument terminer correctement la routine de calibration avant de voir apparaître un curseur.
+Nous avons essayé par nous-mêmes d'appliquer la procédure décrite dans la datasheet, sans succès : le curseur n'apparaîssait pas.
+Nous avons par la suite consulté M. Lambert qui nous a donné des conseils puis a fini par nous fournir le code de sa routine de calibration. En essayant de comparer son code au nôtre, nous n'avons dans un premier temps pas compris pourquoi notre routine ne fonctionnait pas car nous avions absolument le même déroulement et nous avions mesuré notre temps de temporisation et avions constaté qu'il était bien supérieur à ce qui était nécessaire.
+
+Nous nous sommes finalement rendus compte que le montage conçu inversait la position des bits RS et R/W par rapport aux jeux d'instructions décris dans la datasheet. En échangeant ces deux bits dans toutes les commandes, nous avons eu immédiatement un écran calibré correctement et le message de test que nous avions codé pour constater le fonctionnement s'est affiché sans encombre.
+
+\paragraph{Routines génériques pour la communication avec le LCD}
+
+Une fois que nous nous sommes assurés que l'écran était correctement configuré, nous avons développé des fonctions utilitaires pour les opérations courantes :
+\begin{itemize}
+  \item VALIDATECMD charge le registre LATD avec la valeur stockée dans WREG, puis fait passer le bit E (Enable) à l'état bas et temporise pour qu'une commande envoyée soit acceptée par l'écran.
+  \item WRITENUMBER affiche un chiffre de 0 à 9 en fonction de la valeur de WREG.
+  \item WRITEG affiche le "g" des grammes
+  \item Des routines comme TOLINE1 et CLEARDISPLAY permettent de déplacer le curseur sur l'écran.
+\end{itemize}
+
+En définitive nous nous sommes assez peu servis des routines TOLINE1 et autres fonctions permettant d'écrire sur plusieurs lignes. Durant nos tests nous avions réussi à nous en servir mais pour la fonctionnalité principale, nous n'en avons pas eu le besoin.
+
+Pour afficher les chiffres nous avions d'abord conçu une table de correspondance avec un computed GOTO qui renverrait dans WREG le code sur 8 bits à afficher sur 4 bits en fonction de la valeur mise dans WREG. Cela fonctionnait dans un programme indépendant, en revanche, une fois intégré dans le programme général, la table ne fonctionnait plus. En effet, ajouter l'index au PCL envoyait le programme environ 200 lignes trop loin. C'est dû au fait que dans le programme indépenant, le faible nombre d'instructions faisaient qu'on pouvait compter les instructions sur uniquement 256 valeurs, alors que dans le programme général, le PCH intervient aussi lorsqu'il y a plus de 256 instructions. Nous nous sommes retrouvés avec un computed GOTO qui ne fonctionnait pas car cela impliquait aussi de gérer le most significant byte du program counter, en plus d'incrémenter le least significant byte (PCL). Comme cela n'est pas possible en une seule instruction et que cela impliquait de faire de la manipulation d'adresse mémoire un peu hasardeuse, nous avons décidé de procéder autrement.
+
+\begin{lstlisting}
+WRITENUMBER
+    MOVWF NUMBER
+    MOVLW b'01010011'
+    CALL VALIDATECMD
+    
+    MOVLW b'01010000'
+    IORWF NUMBER, 0
+    CALL VALIDATECMD
+    
+    RETURN	    
+\end{lstlisting}
+
+La fonction WRITENUMBER par du constat très simple que les 4 bits de poids forts des caractères numériques sont toujours les mêmes. Par conséquent, la première moitié de l'instruction n'a jamais besoin d'être modifiée. En ce qui concerne les bits de poids faible, on part de "0000" pour le 0 et on compte en binaire jusqu'à "1001" pour 9. Il suffisait donc de faire un OU logique de la valeur du chiffre à afficher avec les bits E RS et R/W nécessaires pour envoyer le reste du code du caractère.
+
+\subsection{Acquisition des valeurs en provenance du CAN}
+
+Le CAN (convertisseur Analogique-Numérique) du PIC récupère le signal de sortie de l'ampli, qui est sur 5 V. Nous avons décidé de capter les valeurs sur 10 bits même si cela complique les calculs par rapport au mode 8 bits qui existe aussi. La raison pour laquelle nous avons choisi ce mode est que sur 8 bits, les 5 volts de dynamique seront répartis sur 256 bits soit des $\frac{5}{256}$ de Volt, alors que 10 bits permettent d'obtenir des $\frac{5}{1024}$ de Volt. Comme à charge pleine, soit 1 Kg, le signal de la cellule de pesée renvoie 5 Volts, on avait donc $\frac{1}{1024}$ e de Kg, ce qui est proche du gramme alors que la numérisation sur 8 bits faisait des pas d'environ 4g, ce qui correspond à une erreur potentielle de $\pm 4$g si le CAN utilise la méthode de la troncature pour la numérisation, ou $\pm 2$g pour la méthode de l'arrondi. Comme l'objectif d'une balance est d'offrir la meilleur précision, nous avons donc décidé d'utiliser l'acquisition sur 10 bits.
+
+\paragraph{Récupération des valeurs numérisées}
+Nous avons réutilisé le code réalisé en TP d'électronique numérique. Rien n'a été changé ou presque. 
+Il y a une boucle de polling qui vérifie à chaque tick horloge si l'acquisition est terminée et, quand elle l'est, copie les valeurs dans les registres prévus à cet effet. \\
+\begin{lstlisting}
+LAUNCH
+    BSF ADCON0,GO
+    
+POLL
+    BTFSC ADCON0,GO
+    BRA POLL
+    
+    ; If a new value has been captured, move the result in global vars
+    MOVFF ADRESH, RESULTHI
+    MOVFF ADRESL, RESULTLO
+    
+    RETURN 
+\end{lstlisting}
+
+Dans un premier temps nous avons testé l'acquisition avec la routine WRITECHAR qui affiche les caractères correspondant au code passé dans WREG. Nous ne relèvions que les 8 bits de poids faibles de la valeur que nous envoyions tels quels à la routine WRITECHAR. Cela nous a permis de constater que les variations de 1g changeaient bel et bien la valeur captée en temps réel.
+
+\paragraph{Interruption physique}
+Pour la fonctionnalité associée à l'interrupteur, nous avons aussi réutilisé telle quelle le code du TP. Nous avons fait une interruption qui affichait le caractère "7" quand on appuie sur le bouton pour constater son bon fonctionnement. Une fois le fonctionnemment établi, nous avons remplacer l'affichage par la routine de tare.
+
 \section{Application de la tare}
 
 Une tare peut être prise lors de l'appui sur le bouton. Celui-ci est relié à une pin capable de déclencher une interruption matérielle pour exécuter une routine.\\
@@ -163,7 +236,8 @@ La routine de tare prend une mesure de l'entrée analogique et enregistre la val
 \begin{lstlisting}
 TARE
     CALL ACQUISITION
-    MOVFF RESULTLO, DEAD_WEIGHT
+    MOVFF RESULTLO, DEAD_WEIGHTLO
+    MOVFF RESULTHI, DEAD_WEIGHTHI
     RETURN
 \end{lstlisting}
 
@@ -172,10 +246,21 @@ Cette valeur sera soustraite à la valeur mesurée avant conversion et affichage
 \begin{lstlisting}
 SHOWACQ
     CALL CLEARDISPLAY
-    CALL ACQUISITION      ; Recuperation du poids (valeur brute)
-    MOVF DEAD_WEIGHT, 0   
-    SUBWF RESULTLO, 1     ; Application de la tare
+    CALL ACQUISITION      
+    MOVF DEAD_WEIGHTLO, 0		   
+    SUBWF RESULTLO, 1
+    BTFSS STATUS, 0		          
+    INCFSZ DEAD_WEIGHTHI, 0	   
+    SUBWF RESULTHI, 1		        
+    BN NEG_VALUE		    
+    
 \end{lstlisting}
+
+Pour que la tare soit correcte, il faut bien opérer une soustraction sur deux octets, en commençant par l'octet de poids faible et en faisant remonter une éventuelle retenue à la valeur qu'on soustrait à l'octet de poids fort. 
+On peut noter que la deuxième partie de la soustraction n'est pas réalisée si l'octet de poids fort est déjà égal à zéro.
+
+Compte tenu qu'un poids négatif n'a pas de sens au niveau physique, nous choisissons de bloquer la valeur à un minimum de 0g.
+
 
 \section{Application d'un coefficient correcteur}
 
